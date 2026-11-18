@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ตารางแทงบอลสเต็ปออนไลน์ & Supabase</title>
+    <title>ตารางแทงบอลสเต็ปออนไลน์ & ระบบจัดการบิล</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS SDK -->
@@ -188,6 +188,35 @@
 
     </main>
 
+    <!-- MODAL: รายงานรายได้ -->
+    <div id="income-report-modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex justify-center items-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="text-base font-bold text-amber-400">📈 รายงานรายได้โต๊ะบอล (Income & Profit Report)</h3>
+                <button onclick="closeIncomeModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+            <div class="flex flex-wrap gap-3 items-center bg-slate-900 p-3 rounded border border-slate-700 text-xs">
+                <div>
+                    <label class="text-slate-400 mr-1">เลือกวันที่:</label>
+                    <input type="date" id="filter-date" onchange="renderIncomeReport()" class="bg-slate-800 border border-slate-700 rounded p-1 text-white">
+                </div>
+                <div>
+                    <label class="text-slate-400 mr-1">เรียงตามยอดแทง:</label>
+                    <select id="filter-income-sort" onchange="renderIncomeReport()" class="bg-slate-800 border border-slate-700 rounded p-1 text-white">
+                        <option value="high">ยอดแทง: มาก ➔ น้อย</option>
+                        <option value="low">ยอดแทง: น้อย ➔ มาก</option>
+                    </select>
+                </div>
+                <button onclick="resetIncomeFilter()" class="bg-slate-700 px-3 py-1 rounded text-white">รีเซ็ตตัวกรอง</button>
+            </div>
+            <div id="income-report-content" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            <div class="flex justify-between items-center pt-3 border-t border-slate-700 text-sm">
+                <span id="income-summary-text" class="font-bold text-amber-300">กำไรสุทธิรวม: 0 บาท</span>
+                <button onclick="closeIncomeModal()" class="bg-slate-700 px-4 py-2 rounded text-xs text-white">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: ล็อกอินแอดมิน -->
     <div id="admin-login-modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex justify-center items-center p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
@@ -304,7 +333,6 @@
             alert('ออกจากระบบแอดมินเรียบร้อย');
         }
 
-        // ฟังก์ชันเช็กเวลาแข่ง (00:00 - 10:00 น. ถือเป็นบอลดึก/บอลเช้า เปิดปกติ)
         function isMatchStarted(matchTimeStr) {
             if (!matchTimeStr) return false;
             const now = new Date();
@@ -525,17 +553,28 @@
             allBillsCache = bills || [];
             document.getElementById('stat-total-bills').innerText = `${allBillsCache.length} บิล`;
             
-            let totalAmount = 0, pendingCount = 0;
+            let totalAmount = 0, pendingCount = 0, netProfit = 0;
             allBillsCache.forEach(b => {
                 totalAmount += Number(b.bet_amount);
-                if (b.status === 'รอผลบอล') pendingCount++;
+                if (b.status === 'รอผลบอล') {
+                    pendingCount++;
+                } else if (b.status === 'เสีย') {
+                    netProfit += Number(b.bet_amount);
+                } else if (b.status === 'ชนะ') {
+                    netProfit -= (Number(b.estimated_payout) - Number(b.bet_amount));
+                }
             });
             document.getElementById('stat-total-amount').innerText = `${totalAmount.toLocaleString()} บาท`;
+            document.getElementById('stat-net-profit').innerText = `${netProfit.toLocaleString()} บาท`;
             document.getElementById('stat-pending-bills').innerText = `${pendingCount} บิล`;
 
             const tbody = document.getElementById('admin-bills-table');
             let html = '';
             allBillsCache.forEach(b => {
+                let statusColor = 'text-yellow-400';
+                if (b.status === 'ชนะ') statusColor = 'text-emerald-400';
+                if (b.status === 'เสีย') statusColor = 'text-red-400';
+
                 html += `
                     <tr class="hover:bg-slate-700/40 border-b border-slate-700">
                         <td class="p-2.5 font-bold text-amber-300">${b.bill_id}</td>
@@ -544,7 +583,7 @@
                         <td class="p-2.5 text-right">${Number(b.bet_amount).toLocaleString()}</td>
                         <td class="p-2.5 text-right">${b.total_odds}</td>
                         <td class="p-2.5 text-right text-emerald-400 font-bold">${Number(b.estimated_payout).toLocaleString()}</td>
-                        <td class="p-2.5 text-center font-bold text-yellow-400">${b.status}</td>
+                        <td class="p-2.5 text-center font-bold ${statusColor}">${b.status}</td>
                         <td class="p-2.5 text-center">
                             <button onclick='viewBillDetail(${JSON.stringify(b)})' class="bg-slate-700 hover:bg-amber-600 text-white px-2.5 py-1 rounded text-[11px]">🔍 ดูสลิป</button>
                         </td>
@@ -558,11 +597,80 @@
             alert('รันประมวลผลอัตโนมัติสำเร็จ');
         }
 
+        function openIncomeReportModal() {
+            document.getElementById('income-report-modal').classList.remove('hidden');
+            renderIncomeReport();
+        }
+
+        function closeIncomeModal() { document.getElementById('income-report-modal').classList.add('hidden'); }
+        function resetIncomeFilter() {
+            document.getElementById('filter-date').value = '';
+            document.getElementById('filter-income-sort').value = 'high';
+            renderIncomeReport();
+        }
+
+        function renderIncomeReport() {
+            const contentEl = document.getElementById('income-report-content');
+            const summaryEl = document.getElementById('income-summary-text');
+            const selectedDate = document.getElementById('filter-date').value;
+            const sortType = document.getElementById('filter-income-sort').value;
+
+            let bills = [...allBillsCache];
+
+            if (selectedDate) {
+                bills = bills.filter(b => {
+                    if (!b.created_at) return false;
+                    let bDate = b.created_at.split('T')[0];
+                    return bDate === selectedDate;
+                });
+            }
+
+            if (bills.length === 0) {
+                contentEl.innerHTML = `<div class="text-center text-slate-400 py-6">ไม่พบรายการบิลในช่วงเวลานี้</div>`;
+                summaryEl.innerText = `กำไรสุทธิรวม: 0 บาท`;
+                return;
+            }
+
+            let html = '';
+            let totalProfit = 0;
+
+            bills.forEach(b => {
+                let profit = 0;
+                let profitClass = 'text-slate-400';
+                if (b.status === 'เสีย') {
+                    profit = Number(b.bet_amount);
+                    totalProfit += profit;
+                    profitClass = 'text-emerald-400 font-bold';
+                } else if (b.status === 'ชนะ') {
+                    profit = -(Number(b.estimated_payout) - Number(b.bet_amount));
+                    totalProfit += profit;
+                    profitClass = 'text-red-400 font-bold';
+                }
+
+                html += `
+                    <div class="bg-slate-900 p-2.5 rounded border border-slate-700 flex justify-between items-center text-xs">
+                        <div>
+                            <span class="text-amber-400 font-bold">${b.bill_id}</span> (${b.player_name}) 
+                            <span class="text-slate-400">แทง: ${Number(b.bet_amount).toLocaleString()} บาท</span>
+                        </div>
+                        <div class="text-right">
+                            <span>สถานะ: <b class="text-white">${b.status}</b></span> | 
+                            กำไรโต๊ะ: <span class="${profitClass}">${profit >= 0 ? '+' : ''}${profit.toLocaleString()} ฿</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            contentEl.innerHTML = html;
+            summaryEl.innerText = `กำไรสุทธิรวมโต๊ะบอล: ${totalProfit.toLocaleString()} บาท`;
+        }
+
         function viewBillDetail(bill) {
             document.getElementById('modal-bill-title').innerText = `สลิปโพย: ${bill.bill_id}`;
             document.getElementById('slip-id').innerText = bill.bill_id;
             document.getElementById('slip-player').innerText = bill.player_name;
             document.getElementById('slip-time').innerText = bill.created_at ? new Date(bill.created_at).toLocaleString('th-TH') : new Date().toLocaleString('th-TH');
+            document.getElementById('slip-amount').innerText = `${Number(b.bet_amount).toLocaleString()} บาท`; // ใช้ bill.bet_amount ข้างล่าง
             document.getElementById('slip-amount').innerText = `${Number(bill.bet_amount).toLocaleString()} บาท`;
             document.getElementById('slip-odds').innerText = bill.total_odds;
             document.getElementById('slip-payout').innerText = `${Number(bill.estimated_payout).toLocaleString()} บาท`;
