@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- html2canvas สำหรับแปลงบิลเป็นรูปภาพ -->
+    <!-- html2canvas สำหรับแปลงตารางและบิลเป็นรูปภาพ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- Google Font (Prompt) -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -128,7 +128,11 @@
                     <h2 class="text-lg font-bold text-amber-400">📊 แผงควบคุมผู้ดูแลระบบ (Admin Dashboard)</h2>
                     <p class="text-xs text-slate-400">โหมดแอดมิน (จัดการบิลและตรวจสอบผล)</p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- ปุ่มเมนูออกภาพตารางให้ลูกค้าทางไลน์ -->
+                    <button onclick="openExportTableModal()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
+                        📸 ออกภาพตารางให้ลูกค้า (ส่งไลน์)
+                    </button>
                     <button onclick="switchView('user')" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
                         👁️ กลับหน้าลูกค้า
                     </button>
@@ -216,6 +220,40 @@
         </div>
 
     </main>
+
+    <!-- MODAL: หน้าต่างออกภาพตารางให้ลูกค้าทางไลน์ (ยาวต่อเนื่อง) -->
+    <div id="export-table-modal" class="hidden fixed inset-0 bg-slate-950/90 z-50 flex justify-center items-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-4xl shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <div>
+                    <h3 class="text-base font-bold text-cyan-400">📸 ภาพตารางแข่งขันสำหรับส่งให้ลูกค้าทางไลน์</h3>
+                    <p class="text-xs text-slate-400">จัดเรียงรหัส 1 ไปจนจบ อ่านง่าย ยาวต่อเนื่องในภาพเดียว</p>
+                </div>
+                <button onclick="closeExportTableModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+
+            <!-- ส่วนของภาพตารางที่จะถูกแปลงเป็นรูปภาพ -->
+            <div id="printable-table-container" class="bg-slate-900 p-6 rounded-xl border border-slate-700 space-y-4 text-xs text-slate-100">
+                <div class="text-center border-b border-slate-800 pb-3">
+                    <h2 class="text-lg font-bold text-amber-400">⚽ โปรแกรมฟุตบอลสเต็ปออนไลน์ (ประจำวัน)</h2>
+                    <p class="text-[11px] text-slate-400">พิมพ์รหัสคู่ที่ต้องการส่งให้แอดมินทางไลน์เพื่อเปิดบิลได้เลยครับ</p>
+                </div>
+                <div id="export-table-content" class="space-y-3">
+                    <!-- ตารางจะถูกเรนเดอร์แทรกตรงนี้ -->
+                </div>
+                <div class="text-center text-[10px] text-slate-500 pt-2 border-t border-slate-800">
+                    โต๊ะเยาวราช - อัปเดตราคาและโปรแกรมเรียลไทม์
+                </div>
+            </div>
+
+            <div class="flex justify-between gap-2 pt-2 border-t border-slate-700">
+                <button onclick="downloadTableImage()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-lg text-xs transition flex justify-center items-center gap-1 shadow">
+                    📥 ดาวน์โหลดภาพตารางนี้ (ส่งไลน์)
+                </button>
+                <button onclick="closeExportTableModal()" class="bg-slate-700 hover:bg-slate-600 px-5 py-2 rounded-lg text-xs text-white">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL: รายงานรายได้ -->
     <div id="income-report-modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex justify-center items-center p-4">
@@ -439,6 +477,80 @@
                 }
                 loadUserBillsHistory();
             } catch (err) { tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-400">โหลดข้อมูลไม่สำเร็จ</td></tr>`; }
+        }
+
+        // ฟังก์ชันสร้างและเปิดหน้าต่างภาพตารางยาวต่อเนื่องสำหรับส่งให้ลูกค้าทางไลน์
+        async function openExportTableModal() {
+            const container = document.getElementById('export-table-content');
+            container.innerHTML = `<div class="text-center py-6 text-slate-400">กำลังจัดเรียงตารางแข่งขัน...</div>`;
+            document.getElementById('export-table-modal').classList.remove('hidden');
+
+            const { data, error } = await supabaseClient.from('matches').select('*').order('match_id');
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-red-400">ไม่พบข้อมูลโปรแกรมแข่งขันในระบบ</div>`;
+                return;
+            }
+
+            // จัดกลุ่มตามลีก หรือแสดงเรียงยาวต่อเนื่องจากรหัส 1 ไปจนจบ
+            let html = `
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-950 text-amber-400 uppercase text-[11px] border-b border-slate-700">
+                            <th class="p-2 text-center">เวลา</th>
+                            <th class="p-2 text-center">รหัสเหย้า</th>
+                            <th class="p-2">ทีมเหย้า</th>
+                            <th class="p-2 text-center">แฮนดิแคป</th>
+                            <th class="p-2 text-center">รหัสเยือน</th>
+                            <th class="p-2">ทีมเยือน</th>
+                            <th class="p-2 text-center">รหัสสูง</th>
+                            <th class="p-2 text-center">สูง/ต่ำ</th>
+                            <th class="p-2 text-center">รหัสต่ำ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+            `;
+
+            let currentLeague = '';
+            data.forEach(m => {
+                if (m.league !== currentLeague) {
+                    currentLeague = m.league;
+                    html += `<tr class="bg-amber-950/60 border-y border-amber-600/40"><td colspan="9" class="p-2 text-center font-bold text-amber-300 uppercase">🏆 ${currentLeague}</td></tr>`;
+                }
+                let homeStyle = m.favorite_side === 'HOME' ? 'text-red-400 font-bold' : 'text-slate-200';
+                let awayStyle = m.favorite_side === 'AWAY' ? 'text-red-400 font-bold' : 'text-slate-200';
+
+                html += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-2 text-center text-slate-400">${m.match_time}</td>
+                        <td class="p-2 text-center font-bold text-amber-300">[${m.home_code}]</td>
+                        <td class="p-2 font-medium ${homeStyle}">${m.favorite_side === 'HOME' ? '* ' : ''}${m.home_team}</td>
+                        <td class="p-2 text-center text-emerald-400 font-semibold">${m.hdp_value}</td>
+                        <td class="p-2 text-center font-bold text-amber-300">[${m.away_code}]</td>
+                        <td class="p-2 font-medium ${awayStyle}">${m.favorite_side === 'AWAY' ? '* ' : ''}${m.away_team}</td>
+                        <td class="p-2 text-center font-bold text-cyan-300">[${m.over_code}]</td>
+                        <td class="p-2 text-center text-slate-300">${m.over_goal}</td>
+                        <td class="p-2 text-center font-bold text-cyan-300">[${m.under_code}]</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        function closeExportTableModal() {
+            document.getElementById('export-table-modal').classList.add('hidden');
+        }
+
+        // ฟังก์ชันแปลงตารางเป็นภาพ PNG ยาวต่อเนื่อง
+        function downloadTableImage() {
+            const tableElement = document.getElementById('printable-table-container');
+            html2canvas(tableElement, { scale: 2, backgroundColor: '#0f172a' }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Match_Schedule_${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
         }
 
         function addBet(matchId, type, code) {
@@ -717,7 +829,6 @@
 
                 for (let bet of b.selected_bets) {
                     let m = matchMap[bet.matchId];
-                    // เงื่อนไขฉลาด: ถ้าคู่ไหนช่องสกอร์ยังว่างเปล่า (ไม่มีตัวเลข) ให้ถือว่ายังไม่จบ และปรับสถานะบิลเป็นรอผล
                     if (!m || m.home_score === null || m.away_score === null || m.home_score === '' || m.away_score === '') { 
                         allFinished = false; 
                         break; 
@@ -789,7 +900,6 @@
                 }
 
                 if (!allFinished) {
-                    // ถ้ายังกรอกสกอร์ไม่ครบทุกคู่ในบิล ให้คงสถานะเป็นรอผลบอล
                     await supabaseClient.from('bills').update({ status: 'รอผลบอล' }).eq('bill_id', b.bill_id);
                     continue;
                 }
@@ -901,11 +1011,10 @@
 
             let betsHtml = '';
             bill.selected_bets.forEach((bet) => {
-                // ดึงข้อมูลสกอร์จากตาราง matches ในหน่วยความจำ (ถ้ามี) มาแสดงในสลิป
                 let matchInfo = matchesMapGlobal[bet.matchId];
-                let scoreText = `<span class="text-yellow-400">[ยังไม่แข่ง / รอผล]</span>`;
+                let scoreText = `<span class="text-yellow-400">[รอผล]</span>`;
                 
-                if (matchInfo && matchInfo.home_score !== null && matchInfo.match_score !== '' && matchInfo.away_score !== null) {
+                if (matchInfo && matchInfo.home_score !== null && matchInfo.home_score !== '' && matchInfo.away_score !== null) {
                     scoreText = `<span class="text-emerald-400 font-bold">สกอร์: ${matchInfo.home_score} - ${matchInfo.away_score}</span>`;
                 }
 
