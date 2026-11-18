@@ -158,23 +158,26 @@
                 </div>
             </div>
 
-            <!-- ส่วนจัดการผลการแข่งขัน (กรอกสกอร์) -->
+            <!-- ส่วนจัดการผลการแข่งขัน (กรอกและแก้ไขสกอร์อัจฉริยะ) -->
             <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-4 space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                    <h3 class="font-bold text-amber-300 text-sm">⚽ บันทึกผลสกอร์การแข่งขัน (ระบบคิดเงินอัตโนมัติ)</h3>
-                    <button onclick="loadAdminMatches()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-xs">รีเฟรชตารางคู่แข่ง</button>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700 pb-3 gap-2">
+                    <div>
+                        <h3 class="font-bold text-amber-300 text-sm">⚡ บันทึกและแก้ไขสกอร์การแข่งขัน (คู่ที่ต้องสรุปผล)</h3>
+                        <p class="text-[11px] text-slate-400">พิมพ์หรือแก้สกอร์แล้วกดอัปเดตเพื่อบันทึกทับได้ทันที</p>
+                    </div>
+                    <button onclick="loadAdminMatches()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-xs">🔄 รีเฟรชตารางสกอร์</button>
                 </div>
-                <div class="overflow-x-auto max-h-60 overflow-y-auto">
+                <div class="overflow-x-auto max-h-72 overflow-y-auto">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead>
-                            <tr class="bg-slate-900 text-slate-400 uppercase text-[11px] border-b border-slate-700">
+                            <tr class="bg-slate-900 text-slate-400 uppercase text-[11px] border-b border-slate-700 sticky top-0">
                                 <th class="p-2">ลีก / เวลา</th>
                                 <th class="p-2">ทีมเหย้า</th>
                                 <th class="p-2 text-center">แฮนดิแคป</th>
                                 <th class="p-2">ทีมเยือน</th>
                                 <th class="p-2 text-center">สกอร์เหย้า</th>
                                 <th class="p-2 text-center">สกอร์เยือน</th>
-                                <th class="p-2 text-center">จัดการ</th>
+                                <th class="p-2 text-center">จัดการ / อัปเดต</th>
                             </tr>
                         </thead>
                         <tbody id="admin-matches-tbody" class="divide-y divide-slate-700">
@@ -188,7 +191,7 @@
             <div id="bills-section-target" class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden p-4 space-y-3">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                     <h3 class="font-bold text-amber-300 text-sm">📋 รายการโพยทั้งหมดในระบบ</h3>
-                    <button onclick="calculateAllBillsAuto()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-bold">⚡ คำนวณผลออโต้</button>
+                    <button onclick="calculateAllBillsAuto()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-bold">⚡ คำนวณผลบิลออโต้</button>
                 </div>
                 <div class="overflow-x-auto max-h-96 overflow-y-auto">
                     <table class="w-full text-left text-xs border-collapse">
@@ -596,9 +599,29 @@
             document.getElementById('stat-net-profit').innerText = `${netProfit.toLocaleString()} บาท`;
             document.getElementById('stat-pending-bills').innerText = `${pendingCount} บิล`;
 
+            renderAdminBillsTable(allBillsCache);
+        }
+
+        function filterBills(type) {
+            currentFilter = type;
+            let filtered = [...allBillsCache];
+            if (type === 'pending') {
+                filtered = allBillsCache.filter(b => b.status === 'รอผลบอล');
+            } else if (type === 'turnover') {
+                // แสดงทั้งหมดแต่เรียงหรือเน้นย้ำ
+            }
+            renderAdminBillsTable(filtered);
+        }
+
+        function renderAdminBillsTable(bills) {
             const tbody = document.getElementById('admin-bills-table');
+            if (!bills || bills.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">ไม่พบรายการบิล</td></tr>`;
+                return;
+            }
+
             let html = '';
-            allBillsCache.forEach(b => {
+            bills.forEach(b => {
                 let statusColor = 'text-yellow-400';
                 if (b.status === 'ชนะ') statusColor = 'text-emerald-400';
                 if (b.status === 'เสีย') statusColor = 'text-red-400';
@@ -629,19 +652,36 @@
             matchesMapGlobal = {};
             data.forEach(m => matchesMapGlobal[m.match_id] = m);
 
+            // กรองคู่ที่ถึงเวลาแข่งขันแล้วหรือแข่งเสร็จแล้วขึ้นมาไว้ด้านบนเพื่อความอัจฉริยะ
+            let sortedMatches = data.sort((a, b) => {
+                let aStarted = isMatchStarted(a.match_time) ? 1 : 0;
+                let bStarted = isMatchStarted(b.match_time) ? 1 : 0;
+                return bStarted - aStarted;
+            });
+
             let html = '';
-            data.forEach(m => {
+            sortedMatches.forEach(m => {
                 let hHome = m.home_score !== null ? m.home_score : '';
                 let hAway = m.away_score !== null ? m.away_score : '';
+                let isStarted = isMatchStarted(m.match_time);
+                let badge = isStarted ? `<span class="text-red-400 text-[10px] font-bold block">🔴 กำลังเตะ/จบแล้ว</span>` : `<span class="text-slate-400 text-[10px] block">⏳ ยังไม่เตะ</span>`;
+
                 html += `
-                    <tr class="border-b border-slate-700/50">
-                        <td class="p-2 text-slate-300">${m.league} (${m.match_time})</td>
-                        <td class="p-2 font-medium">${m.home_team}</td>
-                        <td class="p-2 text-center text-amber-400">${m.hdp_value}</td>
-                        <td class="p-2 font-medium">${m.away_team}</td>
-                        <td class="p-2 text-center"><input type="number" id="score-home-${m.match_id}" value="${hHome}" class="w-12 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white"></td>
-                        <td class="p-2 text-center"><input type="number" id="score-away-${m.match_id}" value="${hAway}" class="w-12 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white"></td>
-                        <td class="p-2 text-center"><button onclick="saveMatchScore(${m.match_id})" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2 py-1 rounded text-[11px]">💾 บันทึก</button></td>
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-700/20">
+                        <td class="p-2 text-slate-300">
+                            <b class="text-amber-300">${m.league}</b><br>
+                            <span>${m.match_time}</span> ${badge}
+                        </td>
+                        <td class="p-2 font-medium text-white">${m.home_team}</td>
+                        <td class="p-2 text-center text-emerald-400 font-bold">${m.hdp_value}</td>
+                        <td class="p-2 font-medium text-white">${m.away_team}</td>
+                        <td class="p-2 text-center"><input type="number" id="score-home-${m.match_id}" value="${hHome}" class="w-14 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white font-bold"></td>
+                        <td class="p-2 text-center"><input type="number" id="score-away-${m.match_id}" value="${hAway}" class="w-14 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white font-bold"></td>
+                        <td class="p-2 text-center">
+                            <button onclick="saveMatchScore(${m.match_id})" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1 rounded text-[11px] shadow">
+                                💾 อัปเดตสกอร์
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
@@ -652,11 +692,11 @@
             const homeScore = parseInt(document.getElementById(`score-home-${matchId}`).value);
             const awayScore = parseInt(document.getElementById(`score-away-${matchId}`).value);
 
-            if (isNaN(homeScore) || isNaN(awayScore)) { alert('กรุณากรอกสกอร์ให้ครบ'); return; }
+            if (isNaN(homeScore) || isNaN(awayScore)) { alert('กรุณากรอกสกอร์ตัวเลขให้ครบถ้วน'); return; }
 
             const { error } = await supabaseClient.from('matches').update({ home_score: homeScore, away_score: awayScore }).eq('match_id', matchId);
             if (error) { alert('บันทึกไม่สำเร็จ: ' + error.message); return; }
-            alert(`บันทึกสกอร์คู่ ID: ${matchId} สำเร็จ!`);
+            alert(`✅ อัปเดตสกอร์คู่ ID: ${matchId} สำเร็จ!\n(สามารถกดปุ่ม "คำนวณผลบิลออโต้" ด้านล่างเพื่ออัปเดตสถานะบิลได้ทันที)`);
             loadAdminMatches();
         }
 
@@ -765,7 +805,7 @@
                 }).eq('bill_id', b.bill_id);
             }
 
-            alert('คำนวณผลบิลอัตโนมัติสำเร็จ!');
+            alert('⚡ ประมวลผลและอัปเดตสถานะบิลทั้งหมดสำเร็จ!');
             loadAdminDashboard();
         }
 
