@@ -82,6 +82,1061 @@
                     </div>
                     <div class="space-y-3 bg-slate-900/60 p-3 rounded-lg border border-slate-700">
                         <div>
+                            <label class="block text-xs text-slate-400 mb-1">ชื่อลูกค้า</label>
+                            <input type="text" id="player-name" oninput="loadUserBillsHistory()" placeholder="ระบุชื่อของคุณ..." class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">จำนวนเงินเดิมพัน (บาท):</label>
+                            <input type="number" id="bet-amount" value="100" min="50" oninput="calculatePayout()" class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                        </div>
+                        <div class="pt-2 border-t border-slate-700 text-xs space-y-1">
+                            <div class="flex justify-between text-slate-400">
+                                <span>ตัวคูณรวมคร่าวๆ:</span>
+                                <span id="total-odds" class="text-white font-bold">0.00</span>
+                            </div>
+                            <div class="flex justify-between text-slate-300 font-medium">
+                                <span>เงินรางวัลสูงสุด (ถ้าเข้าหมด):</span>
+                                <span id="estimated-payout" class="text-emerald-400 font-bold text-sm">0.00 บาท</span>
+                            </div>
+                        </div>
+                        <button onclick="submitBill()" class="w-full mt-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-2.5 rounded-lg transition shadow-lg text-sm">
+                            📤 ส่งบิลเดิมพัน
+                        </button>
+                    </div>
+
+                    <div class="bg-amber-950/40 border border-amber-600/50 p-3 rounded-lg text-xs text-amber-200 space-y-1">
+                        <p class="font-bold">📌 คำแนะนำการส่งบิล:</p>
+                        <p>1. กดส่งบิลเพื่อบันทึกรายการ</p>
+                        <p>2. โอนเงินตามยอดเดิมพัน</p>
+                        <p>3. **ส่งสลิปการโอนให้แอดมิน** เพื่อยืนยันบิล</p>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-700">
+                        <h3 class="font-semibold text-xs text-slate-400 mb-2">📜 ประวัติบิลของคุณ (ในเครื่องนี้)</h3>
+                        <div id="recent-bills" class="space-y-2 max-h-48 overflow-y-auto text-xs text-slate-300 pr-1">
+                            <span class="text-slate-500">ยังไม่มีรายการบิลในเครื่องนี้</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== VIEW 2: หน้าแอดมิน DASHBOARD ==================== -->
+        <div id="view-admin" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex justify-between items-center shadow-lg">
+                <div>
+                    <h2 class="text-lg font-bold text-amber-400">📊 แผงควบคุมผู้ดูแลระบบ (Admin Dashboard)</h2>
+                    <p class="text-xs text-slate-400">โหมดแอดมิน (จัดการบิลและตรวจสอบผล)</p>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- ปุ่มเมนูออกภาพตารางให้ลูกค้าทางไลน์ -->
+                    <button onclick="openExportTableModal()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
+                        📸 ออกภาพตารางให้ลูกค้า (ส่งไลน์)
+                    </button>
+                    <button onclick="switchView('user')" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                        👁️ กลับหน้าลูกค้า
+                    </button>
+                    <button onclick="adminLogout()" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">
+                        🚪 ออกจากระบบ
+                    </button>
+                </div>
+            </div>
+
+            <!-- สรุปสถิติ KPI -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div onclick="filterBills('all')" class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow cursor-pointer hover:border-amber-400 transition">
+                    <p class="text-xs text-slate-400">ยอดโพยทั้งหมด</p>
+                    <h3 id="stat-total-bills" class="text-2xl font-bold text-amber-400 mt-1">0 บิล</h3>
+                </div>
+                <div onclick="filterBills('turnover')" class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow cursor-pointer hover:border-cyan-400 transition">
+                    <p class="text-xs text-slate-400">ยอดแทงรวมสุทธิ (Turnover)</p>
+                    <h3 id="stat-total-amount" class="text-2xl font-bold text-cyan-400 mt-1">0.00 บาท</h3>
+                </div>
+                <div onclick="openIncomeReportModal()" class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow cursor-pointer hover:border-emerald-400 transition">
+                    <p class="text-xs text-slate-400">รายได้โต๊ะบอล</p>
+                    <h3 id="stat-net-profit" class="text-2xl font-bold text-emerald-400 mt-1">0.00 บาท</h3>
+                </div>
+                <div onclick="filterBills('pending')" class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow cursor-pointer hover:border-yellow-400 transition">
+                    <p class="text-xs text-slate-400">บิลที่รอผล</p>
+                    <h3 id="stat-pending-bills" class="text-2xl font-bold text-yellow-400 mt-1">0 บิล</h3>
+                </div>
+            </div>
+
+            <!-- ส่วนจัดการผลการแข่งขัน (กรอกและแก้ไขสกอร์อัจฉริยะ) -->
+            <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-4 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700 pb-3 gap-2">
+                    <div>
+                        <h3 class="font-bold text-amber-300 text-sm">⚡ บันทึกและแก้ไขสกอร์การแข่งขัน (คู่ที่ต้องสรุปผล)</h3>
+                        <p class="text-[11px] text-slate-400">พิมพ์หรือแก้สกอร์แล้วกดอัปเดตเพื่อบันทึกทับได้ทันที</p>
+                    </div>
+                    <button onclick="loadAdminMatches()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-xs">🔄 รีเฟรชตารางสกอร์</button>
+                </div>
+                <div class="overflow-x-auto max-h-72 overflow-y-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900 text-slate-400 uppercase text-[11px] border-b border-slate-700 sticky top-0">
+                                <th class="p-2">ลีก / เวลา</th>
+                                <th class="p-2">ทีมเหย้า</th>
+                                <th class="p-2 text-center">แฮนดิแคป</th>
+                                <th class="p-2">ทีมเยือน</th>
+                                <th class="p-2 text-center">สกอร์เหย้า</th>
+                                <th class="p-2 text-center">สกอร์เยือน</th>
+                                <th class="p-2 text-center">จัดการ / อัปเดต</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-matches-tbody" class="divide-y divide-slate-700">
+                            <tr><td colspan="7" class="p-4 text-center text-slate-400">กำลังโหลดโปรแกรมแข่ง...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ตารางจัดการบิลทั้งหมด -->
+            <div id="bills-section-target" class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden p-4 space-y-3">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                    <h3 class="font-bold text-amber-300 text-sm">📋 รายการโพยทั้งหมดในระบบ</h3>
+                    <button onclick="calculateAllBillsAuto()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-bold">⚡ คำนวณผลบิลออโต้</button>
+                </div>
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900 text-slate-400 uppercase text-[11px] border-b border-slate-700 sticky top-0">
+                                <th class="p-2.5">รหัสบิล / เวลา</th>
+                                <th class="p-2.5">ลูกค้า</th>
+                                <th class="p-2.5 text-center">จำนวนคู่</th>
+                                <th class="p-2.5 text-right">ยอดแทง (บาท)</th>
+                                <th class="p-2.5 text-right">ตัวคูณสุทธิ</th>
+                                <th class="p-2.5 text-right">ยอดจ่ายสุทธิ</th>
+                                <th class="p-2.5 text-center">สถานะ</th>
+                                <th class="p-2.5 text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-bills-table" class="divide-y divide-slate-700">
+                            <tr><td colspan="8" class="p-6 text-center text-slate-400">กำลังโหลดบิล...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL: หน้าต่างออกภาพตารางให้ลูกค้าทางไลน์ (ยาวต่อเนื่อง) -->
+    <div id="export-table-modal" class="hidden fixed inset-0 bg-slate-950/90 z-50 flex justify-center items-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-4xl shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <div>
+                    <h3 class="text-base font-bold text-cyan-400">📸 ภาพตารางแข่งขันสำหรับส่งให้ลูกค้าทางไลน์</h3>
+                    <p class="text-xs text-slate-400">จัดเรียงรหัส 1 ไปจนจบ อ่านง่าย ยาวต่อเนื่องในภาพเดียว</p>
+                </div>
+                <button onclick="closeExportTableModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+
+            <!-- ส่วนของภาพตารางที่จะถูกแปลงเป็นรูปภาพ -->
+            <div id="printable-table-container" class="bg-slate-900 p-6 rounded-xl border border-slate-700 space-y-4 text-xs text-slate-100">
+                <div class="text-center border-b border-slate-800 pb-3">
+                    <h2 class="text-lg font-bold text-amber-400">⚽ โปรแกรมฟุตบอลสเต็ปออนไลน์ (ประจำวัน)</h2>
+                    <p class="text-[11px] text-slate-400">พิมพ์รหัสคู่ที่ต้องการส่งให้แอดมินทางไลน์เพื่อเปิดบิลได้เลยค่ะ</p>
+                </div>
+                <div id="export-table-content" class="space-y-3">
+                    <!-- ตารางจะถูกเรนเดอร์แทรกตรงนี้ -->
+                </div>
+                <div class="text-center text-[10px] text-slate-500 pt-2 border-t border-slate-800">
+                    โต๊ะเยาวราช - อัปเดตราคาและโปรแกรมเรียลไทม์
+                </div>
+            </div>
+
+            <div class="flex justify-between gap-2 pt-2 border-t border-slate-700">
+                <button onclick="downloadTableImage()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-lg text-xs transition flex justify-center items-center gap-1 shadow">
+                    📥 ดาวน์โหลดภาพตารางนี้ (ส่งไลน์)
+                </button>
+                <button onclick="closeExportTableModal()" class="bg-slate-700 hover:bg-slate-600 px-5 py-2 rounded-lg text-xs text-white">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: รายงานรายได้ -->
+    <div id="income-report-modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex justify-center items-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="text-base font-bold text-amber-400">📈 รายงานรายได้โต๊ะบอล (Income & Profit Report)</h3>
+                <button onclick="closeIncomeModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+            <div class="flex flex-wrap gap-3 items-center bg-slate-900 p-3 rounded border border-slate-700 text-xs">
+                <div>
+                    <label class="text-slate-400 mr-1">เลือกวันที่:</label>
+                    <input type="date" id="filter-date" onchange="renderIncomeReport()" class="bg-slate-800 border border-slate-700 rounded p-1 text-white">
+                </div>
+                <div>
+                    <label class="text-slate-400 mr-1">เรียงตามยอดแทง:</label>
+                    <select id="filter-income-sort" onchange="renderIncomeReport()" class="bg-slate-800 border border-slate-700 rounded p-1 text-white">
+                        <option value="high">ยอดแทง: มาก ➔ น้อย</option>
+                        <option value="low">ยอดแทง: น้อย ➔ มาก</option>
+                    </select>
+                </div>
+                <button onclick="resetIncomeFilter()" class="bg-slate-700 px-3 py-1 rounded text-white">รีเซ็ตตัวกรอง</button>
+            </div>
+            <div id="income-report-content" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            <div class="flex justify-between items-center pt-3 border-t border-slate-700 text-sm">
+                <span id="income-summary-text" class="font-bold text-amber-300">กำไรสุทธิรวม: 0 บาท</span>
+                <button onclick="closeIncomeModal()" class="bg-slate-700 px-4 py-2 rounded text-xs text-white">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ล็อกอินแอดมิน -->
+    <div id="admin-login-modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex justify-center items-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <h3 class="text-lg font-bold text-amber-400">🔐 เข้าสู่ระบบแอดมิน (Admin Login)</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Username:</label>
+                    <input type="text" id="admin-user-input" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Password:</label>
+                    <input type="password" id="admin-pass-input" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeAdminLoginModal()" class="bg-slate-700 px-4 py-2 rounded text-xs text-slate-300">ยกเลิก</button>
+                <button onclick="handleAdminLogin()" class="bg-amber-500 font-bold px-4 py-2 rounded text-xs text-slate-950">เข้าสู่ระบบ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ดูรายละเอียดสลิป -->
+    <div id="bill-detail-modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex justify-center items-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <h3 class="text-base font-bold text-amber-400" id="modal-bill-title">รายละเอียดโพยบอล</h3>
+                <button onclick="closeBillModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
+            </div>
+            
+            <div id="printable-slip" class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3 text-xs text-slate-200">
+                <div class="text-center border-b border-slate-800 pb-2">
+                    <h4 class="font-bold text-amber-400 text-sm">⚽ Mbeumo Way </h4>
+                    <p class="text-[10px] text-slate-400" id="slip-time">-</p>
+                </div>
+                <div class="flex justify-between font-semibold">
+                    <span>รหัสบิล: <b id="slip-id" class="text-amber-300">-</b></span>
+                    <span>ผู้เล่น: <b id="slip-player" class="text-white">-</b></span>
+                </div>
+                <div id="slip-bets-list" class="space-y-2 border-t border-b border-slate-800 py-2"></div>
+                <div class="space-y-1 pt-1">
+                    <div class="flex justify-between">
+                        <span>ยอดเดิมพัน:</span>
+                        <span id="slip-amount" class="font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>ตัวคูณรวมสุทธิ:</span>
+                        <span id="slip-odds" class="font-bold">-</span>
+                    </div>
+                    <div class="flex justify-between text-sm pt-1 border-t border-slate-800 font-bold">
+                        <span>ยอดเงินที่จะได้รับ (สุทธิ):</span>
+                        <span id="slip-payout" class="text-emerald-400">-</span>
+                    </div>
+                    <div class="flex justify-between text-[11px] pt-1">
+                        <span>สถานะบิล:</span>
+                        <span id="slip-status" class="font-bold text-amber-400">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between gap-2 pt-2 border-t border-slate-700">
+                <button onclick="downloadSlipImage()" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 rounded text-xs transition flex justify-center items-center gap-1">
+                    📥 บันทึกบิลเป็นรูปภาพ
+                </button>
+                <button onclick="closeBillModal()" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-xs text-white">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT จัดการระบบ (Supabase) -->
+    <script>
+        const SUPABASE_URL = 'https://lxppyaqemxqrwjwdixut.supabase.co'; 
+        const SUPABASE_KEY = 'sb_publishable_q2HZnVNw5sbtCSUz237HtA_CZe1rSSh'; 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let selectedBets = [];
+        let matchesData = [];
+        let matchesMapGlobal = {};
+        let allBillsCache = [];
+        let isAdminLoggedIn = false;
+        let currentFilter = 'all';
+
+        function switchView(view) {
+            const userView = document.getElementById('view-user');
+            const adminView = document.getElementById('view-admin');
+
+            if (view === 'admin') {
+                if (!isAdminLoggedIn) { openAdminLoginModal(); return; }
+                userView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                loadAdminDashboard();
+            } else {
+                userView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                loadMatches();
+            }
+        }
+
+        function openAdminLoginModal() { document.getElementById('admin-login-modal').classList.remove('hidden'); }
+        function closeAdminLoginModal() { document.getElementById('admin-login-modal').classList.add('hidden'); }
+
+        function handleAdminLogin() {
+            if (document.getElementById('admin-user-input').value.trim() === 'jeerapan' && document.getElementById('admin-pass-input').value.trim() === 'P@$$word411') {
+                isAdminLoggedIn = true;
+                closeAdminLoginModal();
+                switchView('admin');
+                alert('ยินดีต้อนรับผู้ดูแลระบบ Jeerapan!');
+            } else {
+                alert('Username หรือ Password ไม่ถูกต้อง!');
+            }
+        }
+
+        function adminLogout() { 
+            isAdminLoggedIn = false; 
+            switchView('user'); 
+            alert('ออกจากระบบแอดมินเรียบร้อย');
+        }
+
+        function isMatchStarted(matchTimeStr) {
+            if (!matchTimeStr) return false;
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTimeVal = currentHour * 60 + currentMinute;
+
+            const parts = matchTimeStr.split(':');
+            if (parts.length < 2) return false;
+            const matchHour = parseInt(parts[0]);
+            const matchMinute = parseInt(parts[1]);
+            const matchTimeVal = matchHour * 60 + matchMinute;
+
+            if (matchTimeVal >= 0 && matchTimeVal <= 600) {
+                return false; 
+            }
+
+            return currentTimeVal >= matchTimeVal;
+        }
+
+        async function loadMatches() {
+            const tbody = document.getElementById('matches-table-body');
+            try {
+                const { data, error } = await supabaseClient.from('matches').select('*').order('league').order('match_time');
+                if (error) throw error;
+                matchesData = data || [];
+                matchesMapGlobal = {};
+                matchesData.forEach(m => {
+                    matchesMapGlobal[m.match_id] = m;
+                    matchesMapGlobal[String(m.match_id)] = m;
+                });
+
+                if (matchesData.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">ยังไม่มีข้อมูลโปรแกรมบอลใน Supabase</td></tr>`; return; }
+
+                let html = '', currentLeague = '';
+                matchesData.forEach(m => {
+                    if (m.league !== currentLeague) {
+                        currentLeague = m.league;
+                        html += `<tr class="bg-amber-900/40 border-y border-amber-500/30"><td colspan="9" class="p-2.5 text-center font-bold text-amber-300 uppercase">🏆 ${currentLeague}</td></tr>`;
+                    }
+                    let homeStyle = m.favorite_side === 'HOME' ? 'text-red-400 font-bold' : 'text-slate-200';
+                    let awayStyle = m.favorite_side === 'AWAY' ? 'text-red-400 font-bold' : 'text-slate-200';
+                    let hdpText = m.hdp_value;
+
+                    let started = isMatchStarted(m.match_time);
+
+                    let homeBtn = started ? `<span class="bg-slate-800 text-slate-500 px-2 py-1 rounded text-[10px]">ปิดรับแทง</span>` : `<button onclick="addBet('${m.match_id}', 'HOME', '${m.home_code}')" class="bg-slate-700 hover:bg-amber-600 px-2 py-1 rounded text-amber-300 font-bold">${m.home_code}</button>`;
+                    let awayBtn = started ? `<span class="bg-slate-800 text-slate-500 px-2 py-1 rounded text-[10px]">ปิดรับแทง</span>` : `<button onclick="addBet('${m.match_id}', 'AWAY', '${m.away_code}')" class="bg-slate-700 hover:bg-amber-600 px-2 py-1 rounded text-amber-300 font-bold">${m.away_code}</button>`;
+                    let overBtn = started ? `<span class="bg-slate-800 text-slate-500 px-1.5 py-1 rounded text-[10px]">-</span>` : `<button onclick="addBet('${m.match_id}', 'OVER', '${m.over_code}')" class="bg-slate-700 hover:bg-amber-600 px-1.5 py-1 rounded text-cyan-300 font-bold">${m.over_code}</button>`;
+                    let underBtn = started ? `<span class="bg-slate-800 text-slate-500 px-1.5 py-1 rounded text-[10px]">-</span>` : `<button onclick="addBet('${m.match_id}', 'UNDER', '${m.under_code}')" class="bg-slate-700 hover:bg-amber-600 px-1.5 py-1 rounded text-cyan-300 font-bold">${m.under_code}</button>`;
+
+                    let rowOpacity = started ? 'opacity-50 bg-slate-900/30' : 'hover:bg-slate-700/35';
+
+                    html += `
+                        <tr class="${rowOpacity} border-b border-slate-700/40 transition">
+                            <td class="p-2.5 text-center text-slate-400">${m.match_time} ${started ? '<span class="text-red-400 text-[10px] block font-bold">🔴 แข่งแล้ว</span>' : ''}</td>
+                            <td class="p-2.5 text-center">${homeBtn}</td>
+                            <td class="p-2.5 font-medium ${homeStyle}">${m.favorite_side === 'HOME' ? '* ' : ''}${m.home_team}</td>
+                            <td class="p-2.5 text-center text-emerald-400 font-semibold">${hdpText}</td>
+                            <td class="p-2.5 text-center">${awayBtn}</td>
+                            <td class="p-2.5 font-medium ${awayStyle}">${m.favorite_side === 'AWAY' ? '* ' : ''}${m.away_team}</td>
+                            <td class="p-2.5 text-center">${overBtn}</td>
+                            <td class="p-2.5 text-center text-slate-300">${m.over_goal}</td>
+                            <td class="p-2.5 text-center">${underBtn}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+
+                const savedName = localStorage.getItem('my_bet_username');
+                const nameInput = document.getElementById('player-name');
+                if (savedName && !nameInput.value) {
+                    nameInput.value = savedName;
+                }
+                loadUserBillsHistory();
+            } catch (err) { tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-400">โหลดข้อมูลไม่สำเร็จ</td></tr>`; }
+        }
+
+        // ฟังก์ชันสร้างและเปิดหน้าต่างภาพตารางยาวต่อเนื่องสำหรับส่งให้ลูกค้าทางไลน์
+        async function openExportTableModal() {
+            const container = document.getElementById('export-table-content');
+            container.innerHTML = `<div class="text-center py-6 text-slate-400">กำลังจัดเรียงตารางแข่งขัน...</div>`;
+            document.getElementById('export-table-modal').classList.remove('hidden');
+
+            const { data, error } = await supabaseClient.from('matches').select('*').order('match_id');
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-red-400">ไม่พบข้อมูลโปรแกรมแข่งขันในระบบ</div>`;
+                return;
+            }
+
+            // จัดกลุ่มตามลีก หรือแสดงเรียงยาวต่อเนื่องจากรหัส 1 ไปจนจบ
+            let html = `
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="bg-slate-950 text-amber-400 uppercase text-[11px] border-b border-slate-700">
+                            <th class="p-2 text-center">เวลา</th>
+                            <th class="p-2 text-center">รหัสเหย้า</th>
+                            <th class="p-2">ทีมเหย้า</th>
+                            <th class="p-2 text-center">แฮนดิแคป</th>
+                            <th class="p-2 text-center">รหัสเยือน</th>
+                            <th class="p-2">ทีมเยือน</th>
+                            <th class="p-2 text-center">รหัสสูง</th>
+                            <th class="p-2 text-center">สูง/ต่ำ</th>
+                            <th class="p-2 text-center">รหัสต่ำ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+            `;
+
+            let currentLeague = '';
+            data.forEach(m => {
+                if (m.league !== currentLeague) {
+                    currentLeague = m.league;
+                    html += `<tr class="bg-amber-950/60 border-y border-amber-600/40"><td colspan="9" class="p-2 text-center font-bold text-amber-300 uppercase">🏆 ${currentLeague}</td></tr>`;
+                }
+                let homeStyle = m.favorite_side === 'HOME' ? 'text-red-400 font-bold' : 'text-slate-200';
+                let awayStyle = m.favorite_side === 'AWAY' ? 'text-red-400 font-bold' : 'text-slate-200';
+
+                html += `
+                    <tr class="hover:bg-slate-800/50">
+                        <td class="p-2 text-center text-slate-400">${m.match_time}</td>
+                        <td class="p-2 text-center font-bold text-amber-300">[${m.home_code}]</td>
+                        <td class="p-2 font-medium ${homeStyle}">${m.favorite_side === 'HOME' ? '* ' : ''}${m.home_team}</td>
+                        <td class="p-2 text-center text-emerald-400 font-semibold">${m.hdp_value}</td>
+                        <td class="p-2 text-center font-bold text-amber-300">[${m.away_code}]</td>
+                        <td class="p-2 font-medium ${awayStyle}">${m.favorite_side === 'AWAY' ? '* ' : ''}${m.away_team}</td>
+                        <td class="p-2 text-center font-bold text-cyan-300">[${m.over_code}]</td>
+                        <td class="p-2 text-center text-slate-300">${m.over_goal}</td>
+                        <td class="p-2 text-center font-bold text-cyan-300">[${m.under_code}]</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        function closeExportTableModal() {
+            document.getElementById('export-table-modal').classList.add('hidden');
+        }
+
+        // ฟังก์ชันแปลงตารางเป็นภาพ PNG ยาวต่อเนื่อง
+        function downloadTableImage() {
+            const tableElement = document.getElementById('printable-table-container');
+            html2canvas(tableElement, { scale: 2, backgroundColor: '#0f172a' }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Match_Schedule_${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        function addBet(matchId, type, code) {
+            const match = matchesData.find(m => m.match_id == matchId);
+            if (!match) return;
+
+            if (isMatchStarted(match.match_time)) {
+                alert('คู่นี้ถึงเวลาแข่งขันและปิดรับแทงไปแล้วครับ!');
+                return;
+            }
+
+            let description = '', odds = 1.90;
+            if (type === 'HOME') {
+                description = `${match.home_team} ${match.favorite_side === 'HOME' ? '[ต่อ]' : '[รอง]'} (${match.hdp_value})`;
+                odds = match.home_odds;
+            } else if (type === 'AWAY') {
+                description = `${match.away_team} ${match.favorite_side === 'AWAY' ? '[ต่อ]' : '[รอง]'} (${match.hdp_value})`;
+                odds = match.away_odds;
+            } else if (type === 'OVER') {
+                description = `${match.home_team} vs ${match.away_team} [สูง ${match.over_goal}]`;
+                odds = match.over_odds;
+            } else if (type === 'UNDER') {
+                description = `${match.home_team} vs ${match.away_team} [ต่ำ ${match.over_goal}]`;
+                odds = match.under_odds;
+            }
+
+            const existingIndex = selectedBets.findIndex(b => b.matchId === matchId);
+            if (existingIndex > -1) { selectedBets[existingIndex] = { matchId, type, description, odds, code }; } 
+            else { selectedBets.push({ matchId, type, description, odds, code }); }
+            renderSelectedBets();
+        }
+
+        function removeBet(matchId) { selectedBets = selectedBets.filter(b => b.matchId !== matchId); renderSelectedBets(); }
+
+        function renderSelectedBets() {
+            const listEl = document.getElementById('selected-list');
+            document.getElementById('selected-count').innerText = `${selectedBets.length} คู่`;
+            if (selectedBets.length === 0) {
+                listEl.innerHTML = `<p class="text-slate-500 text-center py-6">ยังไม่ได้เลือกคู่แข่งขัน</p>`;
+                document.getElementById('total-odds').innerText = '0.00';
+                document.getElementById('estimated-payout').innerText = '0.00 บาท';
+                return;
+            }
+            let html = '', totalOdds = 1;
+            selectedBets.forEach(b => {
+                totalOdds *= b.odds;
+                html += `<div class="bg-slate-900 p-2 rounded border border-slate-700 flex justify-between items-center"><div><span class="text-amber-400 font-bold">[รหัส: ${b.code}]</span><div class="text-white">${b.description}</div></div><button onclick="removeBet('${b.matchId}')" class="text-red-400 font-bold">✕</button></div>`;
+            });
+            listEl.innerHTML = html;
+            document.getElementById('total-odds').innerText = totalOdds.toFixed(2);
+            calculatePayout();
+        }
+
+        function calculatePayout() {
+            const amount = parseFloat(document.getElementById('bet-amount').value) || 0;
+            let totalOdds = 1;
+            selectedBets.forEach(b => totalOdds *= b.odds);
+            document.getElementById('estimated-payout').innerText = (amount * totalOdds).toLocaleString('th-TH', { minimumFractionDigits: 2 }) + ' บาท';
+        }
+
+        function saveUserBillHistory(playerName, billId) {
+            const cleanName = playerName.trim();
+            let deviceBills = JSON.parse(localStorage.getItem('my_device_bills')) || [];
+            if (!deviceBills.includes(billId)) {
+                deviceBills.unshift(billId);
+                localStorage.setItem('my_device_bills', JSON.stringify(deviceBills));
+            }
+            let storageKey = `my_bets_${cleanName}`;
+            let myBills = JSON.parse(localStorage.getItem(storageKey)) || [];
+            if (!myBills.includes(billId)) {
+                myBills.unshift(billId);
+                localStorage.setItem(storageKey, JSON.stringify(myBills));
+            }
+            localStorage.setItem('my_bet_username', cleanName);
+        }
+
+        async function submitBill() {
+            const playerName = document.getElementById('player-name').value.trim();
+            const betAmount = parseFloat(document.getElementById('bet-amount').value);
+            let totalOdds = 1;
+            selectedBets.forEach(b => totalOdds *= b.odds);
+
+            if (!playerName) { alert('กรุณากรอกชื่อลูกค้าก่อนส่งบิล'); document.getElementById('player-name').focus(); return; }
+            if (selectedBets.length === 0) { alert('กรุณาเลือกคู่แข่งขันอย่างน้อย 1 คู่ครับ'); return; }
+
+            const randomBillId = 'B' + Math.floor(1000 + Math.random() * 9000);
+            const newBill = {
+                bill_id: randomBillId,
+                player_name: playerName,
+                selected_bets: selectedBets,
+                bet_amount: betAmount,
+                total_odds: totalOdds.toFixed(2),
+                estimated_payout: (betAmount * totalOdds).toFixed(2),
+                status: 'รอผลบอล'
+            };
+
+            const { error } = await supabaseClient.from('bills').insert([newBill]);
+            if (error) { alert('เกิดข้อผิดพลาด: ' + error.message); return; }
+
+            saveUserBillHistory(playerName, randomBillId);
+            alert(`✅ ส่งบิลสำเร็จ!\nรหัสบิลของคุณคือ: ${randomBillId}\n\n📌 กรุณาโอนเงินและส่งสลิปการโอนให้แอดมินเพื่อยืนยันบิลครับ!`);
+            
+            selectedBets = [];
+            renderSelectedBets();
+            await loadUserBillsHistory();
+            viewBillDetail(newBill);
+        }
+
+        async function loadUserBillsHistory() {
+            const historyEl = document.getElementById('recent-bills');
+            let deviceBills = JSON.parse(localStorage.getItem('my_device_bills')) || [];
+
+            if (deviceBills.length === 0) {
+                historyEl.innerHTML = `<span class="text-slate-500">ยังไม่มีรายการบิลในเครื่องนี้</span>`;
+                return;
+            }
+
+            const { data: bills, error } = await supabaseClient.from('bills').select('*').in('bill_id', deviceBills);
+            if (error || !bills || bills.length === 0) {
+                historyEl.innerHTML = `<span class="text-slate-500">ยังไม่มีประวัติบิล</span>`;
+                return;
+            }
+
+            let html = '';
+            bills.forEach(b => {
+                let statusColor = 'text-amber-400 font-bold';
+                if (b.status === 'ชนะ') statusColor = 'text-emerald-400 font-bold';
+                else if (b.status === 'เสีย') statusColor = 'text-red-400 font-bold';
+
+                html += `
+                    <div onclick='viewBillDetail(${JSON.stringify(b)})' class="bg-slate-900/90 p-2.5 rounded border border-slate-700 flex justify-between items-center cursor-pointer hover:border-amber-500 transition shadow">
+                        <div>
+                            <div class="font-bold text-amber-300">${b.bill_id} <span class="text-white font-normal text-[11px]">(${b.player_name})</span></div>
+                            <div class="text-[11px] text-slate-300">แทง: ${Number(b.bet_amount).toLocaleString()} ฿ | สถานะ: <span class="${statusColor}">${b.status}</span></div>
+                        </div>
+                        <span class="text-xs text-amber-400 underline whitespace-nowrap">🔍 ดูสลิป</span>
+                    </div>
+                `;
+            });
+            historyEl.innerHTML = html;
+        }
+
+        async function loadAdminDashboard() {
+            await loadAdminMatches();
+            const { data: bills } = await supabaseClient.from('bills').select('*').order('created_at', { ascending: false });
+            allBillsCache = bills || [];
+            document.getElementById('stat-total-bills').innerText = `${allBillsCache.length} บิล`;
+            
+            let totalAmount = 0, pendingCount = 0, netProfit = 0;
+            allBillsCache.forEach(b => {
+                totalAmount += Number(b.bet_amount);
+                if (b.status === 'รอผลบอล') {
+                    pendingCount++;
+                } else if (b.status === 'เสีย') {
+                    netProfit += Number(b.bet_amount);
+                } else if (b.status === 'ชนะ') {
+                    netProfit -= (Number(b.estimated_payout) - Number(b.bet_amount));
+                }
+            });
+            document.getElementById('stat-total-amount').innerText = `${totalAmount.toLocaleString()} บาท`;
+            document.getElementById('stat-net-profit').innerText = `${netProfit.toLocaleString()} บาท`;
+            document.getElementById('stat-pending-bills').innerText = `${pendingCount} บิล`;
+
+            renderAdminBillsTable(allBillsCache);
+        }
+
+        function filterBills(type) {
+            currentFilter = type;
+            let filtered = [...allBillsCache];
+            if (type === 'pending') {
+                filtered = allBillsCache.filter(b => b.status === 'รอผลบอล');
+            }
+            renderAdminBillsTable(filtered);
+        }
+
+        function renderAdminBillsTable(bills) {
+            const tbody = document.getElementById('admin-bills-table');
+            if (!bills || bills.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">ไม่พบรายการบิล</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            bills.forEach(b => {
+                let statusColor = 'text-yellow-400';
+                if (b.status === 'ชนะ') statusColor = 'text-emerald-400';
+                if (b.status === 'เสีย') statusColor = 'text-red-400';
+
+                html += `
+                    <tr class="hover:bg-slate-700/40 border-b border-slate-700">
+                        <td class="p-2.5 font-bold text-amber-300">${b.bill_id}</td>
+                        <td class="p-2.5 text-white font-medium">${b.player_name}</td>
+                        <td class="p-2.5 text-center">${b.selected_bets.length} คู่</td>
+                        <td class="p-2.5 text-right">${Number(b.bet_amount).toLocaleString()}</td>
+                        <td class="p-2.5 text-right">${b.total_odds}</td>
+                        <td class="p-2.5 text-right text-emerald-400 font-bold">${Number(b.estimated_payout).toLocaleString()}</td>
+                        <td class="p-2.5 text-center font-bold ${statusColor}">${b.status}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick='viewBillDetail(${JSON.stringify(b)})' class="bg-slate-700 hover:bg-amber-600 text-white px-2.5 py-1 rounded text-[11px]">🔍 ดูสลิป</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        async function loadAdminMatches() {
+            const tbody = document.getElementById('admin-matches-tbody');
+            const { data, error } = await supabaseClient.from('matches').select('*').order('match_id');
+            if (error || !data) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-400">โหลดข้อมูลไม่สำเร็จ</td></tr>`; return; }
+            
+            matchesMapGlobal = {};
+            data.forEach(m => {
+                matchesMapGlobal[m.match_id] = m;
+                matchesMapGlobal[String(m.match_id)] = m;
+            });
+
+            let sortedMatches = data.sort((a, b) => {
+                let aStarted = isMatchStarted(a.match_time) ? 1 : 0;
+                let bStarted = isMatchStarted(b.match_time) ? 1 : 0;
+                return bStarted - aStarted;
+            });
+
+            let html = '';
+            sortedMatches.forEach(m => {
+                let hHome = m.home_score !== null ? m.home_score : '';
+                let hAway = m.away_score !== null ? m.away_score : '';
+                let isStarted = isMatchStarted(m.match_time);
+                let badge = isStarted ? `<span class="text-red-400 text-[10px] font-bold block">🔴 กำลังเตะ/จบแล้ว</span>` : `<span class="text-slate-400 text-[10px] block">⏳ ยังไม่เตะ</span>`;
+
+                html += `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-700/20">
+                        <td class="p-2 text-slate-300">
+                            <b class="text-amber-300">${m.league}</b><br>
+                            <span>${m.match_time}</span> ${badge}
+                        </td>
+                        <td class="p-2 font-medium text-white">${m.home_team}</td>
+                        <td class="p-2 text-center text-emerald-400 font-bold">${m.hdp_value}</td>
+                        <td class="p-2 font-medium text-white">${m.away_team}</td>
+                        <td class="p-2 text-center"><input type="number" id="score-home-${m.match_id}" value="${hHome}" class="w-14 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white font-bold"></td>
+                        <td class="p-2 text-center"><input type="number" id="score-away-${m.match_id}" value="${hAway}" class="w-14 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white font-bold"></td>
+                        <td class="p-2 text-center">
+                            <button onclick="saveMatchScore(${m.match_id})" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1 rounded text-[11px] shadow">
+                                💾 อัปเดตสกอร์
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        async function saveMatchScore(matchId) {
+            const homeScoreInput = document.getElementById(`score-home-${matchId}`).value.trim();
+            const awayScoreInput = document.getElementById(`score-away-${matchId}`).value.trim();
+
+            let homeScore = homeScoreInput === '' ? null : parseInt(homeScoreInput);
+            let awayScore = awayScoreInput === '' ? null : parseInt(awayScoreInput);
+
+            const { error } = await supabaseClient.from('matches').update({ home_score: homeScore, away_score: awayScore }).eq('match_id', matchId);
+            if (error) { alert('บันทึกไม่สำเร็จ: ' + error.message); return; }
+            alert(`✅ อัปเดตสกอร์คู่ ID: ${matchId} สำเร็จ!`);
+            loadAdminMatches();
+        }
+
+        async function calculateAllBillsAuto() {
+            const { data: matches } = await supabaseClient.from('matches').select('*');
+            const { data: bills } = await supabaseClient.from('bills').select('*');
+            if (!matches || !bills) return;
+
+            let matchMap = {};
+            matches.forEach(m => matchMap[m.match_id] = m);
+
+            for (let b of bills) {
+                let billWon = true, billLost = false, billHalfLost = false, allFinished = true, finalOdds = 1;
+
+                for (let bet of b.selected_bets) {
+                    let m = matchMap[bet.matchId];
+                    if (!m || m.home_score === null || m.away_score === null || m.home_score === '' || m.away_score === '') { 
+                        allFinished = false; 
+                        break; 
+                    }
+
+                    let hScore = Number(m.home_score), aScore = Number(m.away_score), hdp = Number(m.hdp_value);
+                    let isHomeFav = m.favorite_side === 'HOME';
+
+                    let betType = bet.type;
+                    if (!betType) {
+                        if (bet.description.includes('[สูง') || bet.description.includes('สูง (')) betType = 'OVER';
+                        else if (bet.description.includes('[ต่ำ') || bet.description.includes('ต่ำ (')) betType = 'UNDER';
+                        else if (bet.description.includes(m.home_team)) betType = 'HOME';
+                        else if (bet.description.includes(m.away_team)) betType = 'AWAY';
+                    }
+
+                    if (betType === 'HOME') {
+                        let diff = hScore - aScore;
+                        if (isHomeFav) {
+                            let netDiff = diff - hdp;
+                            if (netDiff > 0.25) finalOdds *= bet.odds;
+                            else if (netDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                            else if (netDiff === 0) {}
+                            else if (netDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                            else { billWon = false; billLost = true; }
+                        } else {
+                            let netDiff = diff + hdp;
+                            if (netDiff > 0.25) finalOdds *= bet.odds;
+                            else if (netDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                            else if (netDiff === 0) {}
+                            else if (netDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                            else { billWon = false; billLost = true; }
+                        }
+                    } else if (betType === 'AWAY') {
+                        let diff = aScore - hScore;
+                        let isAwayFav = !isHomeFav;
+                        if (isAwayFav) {
+                            let netDiff = diff - hdp;
+                            if (netDiff > 0.25) finalOdds *= bet.odds;
+                            else if (netDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                            else if (netDiff === 0) {}
+                            else if (netDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                            else { billWon = false; billLost = true; }
+                        } else {
+                            let netDiff = diff + hdp;
+                            if (netDiff > 0.25) finalOdds *= bet.odds;
+                            else if (netDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                            else if (netDiff === 0) {}
+                            else if (netDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                            else { billWon = false; billLost = true; }
+                        }
+                    } else if (betType === 'OVER') {
+                        let totalGoal = hScore + aScore;
+                        let overDiff = totalGoal - Number(m.over_goal);
+                        if (overDiff > 0.25) finalOdds *= bet.odds;
+                        else if (overDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                        else if (overDiff === 0) {}
+                        else if (overDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                        else { billWon = false; billLost = true; }
+                    } else if (betType === 'UNDER') {
+                        let totalGoal = hScore + aScore;
+                        let underDiff = Number(m.over_goal) - totalGoal;
+                        if (underDiff > 0.25) finalOdds *= bet.odds;
+                        else if (underDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                        else if (underDiff === 0) {}
+                        else if (underDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                        else { billWon = false; billLost = true; }
+                    }
+                }
+
+                if (!allFinished) {
+                    await supabaseClient.from('bills').update({ status: 'รอผลบอล' }).eq('bill_id', b.bill_id);
+                    continue;
+                }
+
+                let newStatus = 'เสีย', finalPayout = 0;
+                if (billLost) { 
+                    newStatus = 'เสีย'; 
+                    finalOdds = 0; 
+                    finalPayout = 0;
+                } else if (billHalfLost && !billWon) { 
+                    newStatus = 'เสียครึ่ง'; 
+                    finalPayout = Number(b.bet_amount) * finalOdds;
+                } else if (billWon && !billHalfLost) { 
+                    newStatus = 'ชนะ'; 
+                    finalPayout = Number(b.bet_amount) * finalOdds; 
+                } else { 
+                    newStatus = 'ได้บางส่วน'; 
+                    finalPayout = Number(b.bet_amount) * finalOdds; 
+                }
+
+                await supabaseClient.from('bills').update({
+                    status: newStatus,
+                    total_odds: finalOdds.toFixed(2),
+                    estimated_payout: finalPayout.toFixed(2)
+                }).eq('bill_id', b.bill_id);
+            }
+
+            alert('⚡ ประมวลผลและอัปเดตสถานะบิลทั้งหมดสำเร็จ!');
+            loadAdminDashboard();
+        }
+
+        function openIncomeReportModal() {
+            document.getElementById('income-report-modal').classList.remove('hidden');
+            renderIncomeReport();
+        }
+
+        function closeIncomeModal() { document.getElementById('income-report-modal').classList.add('hidden'); }
+        function resetIncomeFilter() {
+            document.getElementById('filter-date').value = '';
+            document.getElementById('filter-income-sort').value = 'high';
+            renderIncomeReport();
+        }
+
+        function renderIncomeReport() {
+            const contentEl = document.getElementById('income-report-content');
+            const summaryEl = document.getElementById('income-summary-text');
+            const selectedDate = document.getElementById('filter-date').value;
+            const sortType = document.getElementById('filter-income-sort').value;
+
+            let bills = [...allBillsCache];
+
+            if (selectedDate) {
+                bills = bills.filter(b => {
+                    if (!b.created_at) return false;
+                    let bDate = b.created_at.split('T')[0];
+                    return bDate === selectedDate;
+                });
+            }
+
+            if (bills.length === 0) {
+                contentEl.innerHTML = `<div class="text-center text-slate-400 py-6">ไม่พบรายการบิลในช่วงเวลานี้</div>`;
+                summaryEl.innerText = `กำไรสุทธิรวม: 0 บาท`;
+                return;
+            }
+
+            let html = '';
+            let totalProfit = 0;
+
+            bills.forEach(b => {
+                let profit = 0;
+                let profitClass = 'text-slate-400';
+                if (b.status === 'เสีย') {
+                    profit = Number(b.bet_amount);
+                    totalProfit += profit;
+                    profitClass = 'text-emerald-400 font-bold';
+                } else if (b.status === 'ชนะ') {
+                    profit = -(Number(b.estimated_payout) - Number(b.bet_amount));
+                    totalProfit += profit;
+                    profitClass = 'text-red-400 font-bold';
+                }
+
+                html += `
+                    <div class="bg-slate-900 p-2.5 rounded border border-slate-700 flex justify-between items-center text-xs">
+                        <div>
+                            <span class="text-amber-400 font-bold">${b.bill_id}</span> (${b.player_name}) 
+                            <span class="text-slate-400">แทง: ${Number(b.bet_amount).toLocaleString()} บาท</span>
+                        </div>
+                        <div class="text-right">
+                            <span>สถานะ: <b class="text-white">${b.status}</b></span> | 
+                            กำไรโต๊ะ: <span class="${profitClass}">${profit >= 0 ? '+' : ''}${profit.toLocaleString()} ฿</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            contentEl.innerHTML = html;
+            summaryEl.innerText = `กำไรสุทธิรวมโต๊ะบอล: ${totalProfit.toLocaleString()} บาท`;
+        }
+
+        function viewBillDetail(bill) {
+            document.getElementById('modal-bill-title').innerText = `สลิปโพย: ${bill.bill_id}`;
+            document.getElementById('slip-id').innerText = bill.bill_id;
+            document.getElementById('slip-player').innerText = bill.player_name;
+            document.getElementById('slip-time').innerText = bill.created_at ? new Date(bill.created_at).toLocaleString('th-TH') : new Date().toLocaleString('th-TH');
+            document.getElementById('slip-amount').innerText = `${Number(bill.bet_amount).toLocaleString()} บาท`;
+            document.getElementById('slip-odds').innerText = bill.total_odds;
+            document.getElementById('slip-payout').innerText = `${Number(bill.estimated_payout).toLocaleString()} บาท`;
+            document.getElementById('slip-status').innerText = bill.status;
+
+            let betsHtml = '';
+            bill.selected_bets.forEach((bet) => {
+                let matchInfo = matchesMapGlobal[bet.matchId];
+                let scoreText = `<span class="text-yellow-400">[รอผล]</span>`;
+                
+                if (matchInfo && matchInfo.home_score !== null && matchInfo.home_score !== '' && matchInfo.away_score !== null) {
+                    scoreText = `<span class="text-emerald-400 font-bold">สกอร์: ${matchInfo.home_score} - ${matchInfo.away_score}</span>`;
+                }
+
+                betsHtml += `
+                    <div class="border-b border-slate-800/60 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0 space-y-1">
+                        <div class="flex justify-between items-center text-[11px]">
+                            <div>
+                                <span class="text-amber-400 font-bold">[รหัส: ${bet.code}]</span> 
+                                <span class="text-white font-medium">${bet.description}</span>
+                            </div>
+                            <span class="text-slate-300 whitespace-nowrap ml-2">ค่าน้ำ: ${bet.odds}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 bg-slate-950/40 p-1 rounded">
+                            <span>คู่แข่งขัน: ${matchInfo ? matchInfo.home_team + ' vs ' + matchInfo.away_team : ' - '}</span>
+                            <span>${scoreText}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('slip-bets-list').innerHTML = betsHtml;
+            document.getElementById('bill-detail-modal').classList.remove('hidden');
+        }
+
+        function closeBillModal() { document.getElementById('bill-detail-modal').classList.add('hidden'); }
+
+        function downloadSlipImage() {
+            const slipElement = document.getElementById('printable-slip');
+            html2canvas(slipElement, { scale: 2, backgroundColor: '#0f172a' }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Slip_${document.getElementById('slip-id').innerText}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        window.onload = () => { loadMatches(); };
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="th" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตารางแทงบอลสเต็ปออนไลน์ & แอดมินจัดการ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- html2canvas สำหรับแปลงตารางและบิลเป็นรูปภาพ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Google Font (Prompt) -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+            <div>
+                <h1 id="main-title" class="text-xl font-bold text-amber-400 flex items-center gap-2">
+                    ⚽ แทงด่วน [ตารางสเต็ป] รายการแข่งขันฟุตบอล
+                </h1>
+                <p class="text-xs text-slate-400">ระบบเชื่อมต่อ Supabase Database (เสถียรและรวดเร็ว)</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="loadMatches()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                    🔄 รีเฟรชตาราง
+                </button>
+                <button onclick="openAdminLoginModal()" class="text-slate-600 hover:text-slate-400 text-[10px] transition">
+                    ⚙️ Admin
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 mt-6">
+
+        <!-- ==================== VIEW 1: หน้าแทงบอลสำหรับลูกค้าทั่วไป ==================== -->
+        <div id="view-user" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <section class="lg:col-span-2 space-y-4">
+                <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden">
+                    <div class="bg-slate-700/50 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
+                        <h2 class="font-semibold text-amber-300 text-sm">📋 ตารางแข่งขันและรหัสเลือกคู่ (ทีมต่อ <span class="text-red-400 font-bold">สีแดง*</span>)</h2>
+                        <span class="text-xs text-slate-400">คู่ที่ถึงเวลาแข่งขันแล้ว ระบบจะปิดรับแทงอัตโนมัติ</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-900/80 text-slate-400 uppercase text-[11px] border-b border-slate-700">
+                                    <th class="p-2.5 text-center">เวลา</th>
+                                    <th class="p-2.5 text-center">รหัสเหย้า</th>
+                                    <th class="p-2.5">ทีมเหย้า</th>
+                                    <th class="p-2.5 text-center">แฮนดิแคป</th>
+                                    <th class="p-2.5 text-center">รหัสเยือน</th>
+                                    <th class="p-2.5">ทีมเยือน</th>
+                                    <th class="p-2.5 text-center">รหัสสูง</th>
+                                    <th class="p-2.5 text-center">สูง/ต่ำ</th>
+                                    <th class="p-2.5 text-center">รหัสต่ำ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matches-table-body" class="divide-y divide-slate-700/50">
+                                <tr><td colspan="9" class="p-6 text-center text-slate-400">กำลังโหลดโปรแกรมแข่งขัน...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-4 sticky top-20 space-y-4">
+                    <h2 class="font-bold text-amber-400 border-b border-slate-700 pb-2 flex justify-between items-center">
+                        <span>🛒 บิลโพยของคุณ (สเต็ป)</span>
+                        <span id="selected-count" class="bg-amber-500 text-slate-950 text-xs px-2 py-0.5 rounded-full font-bold">0 คู่</span>
+                    </h2>
+                    <div id="selected-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-xs">
+                        <p class="text-slate-500 text-center py-6">ยังไม่ได้เลือกคู่แข่งขัน<br>คลิกรหัสในตารางเพื่อจัดชุดสเต็ป</p>
+                    </div>
+                    <div class="space-y-3 bg-slate-900/60 p-3 rounded-lg border border-slate-700">
+                        <div>
                             <label class="block text-xs text-slate-400 mb-1">ชื่อผู้เล่น / ฉายา:</label>
                             <input type="text" id="player-name" oninput="loadUserBillsHistory()" placeholder="ระบุชื่อของคุณ..." class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500">
                         </div>
