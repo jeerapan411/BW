@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ตารางแทงบอลสเต็ปออนไลน์ & ระบบจัดการบิล</title>
+    <title>ตารางแทงบอลสเต็ปออนไลน์ & แอดมินจัดการ</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS SDK -->
@@ -158,6 +158,32 @@
                 </div>
             </div>
 
+            <!-- ส่วนจัดการผลการแข่งขัน (กรอกสกอร์) -->
+            <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-4 space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                    <h3 class="font-bold text-amber-300 text-sm">⚽ บันทึกผลสกอร์การแข่งขัน (ระบบคิดเงินอัตโนมัติ)</h3>
+                    <button onclick="loadAdminMatches()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-xs">รีเฟรชตารางคู่แข่ง</button>
+                </div>
+                <div class="overflow-x-auto max-h-60 overflow-y-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-900 text-slate-400 uppercase text-[11px] border-b border-slate-700">
+                                <th class="p-2">ลีก / เวลา</th>
+                                <th class="p-2">ทีมเหย้า</th>
+                                <th class="p-2 text-center">แฮนดิแคป</th>
+                                <th class="p-2">ทีมเยือน</th>
+                                <th class="p-2 text-center">สกอร์เหย้า</th>
+                                <th class="p-2 text-center">สกอร์เยือน</th>
+                                <th class="p-2 text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-matches-tbody" class="divide-y divide-slate-700">
+                            <tr><td colspan="7" class="p-4 text-center text-slate-400">กำลังโหลดโปรแกรมแข่ง...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- ตารางจัดการบิลทั้งหมด -->
             <div id="bills-section-target" class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden p-4 space-y-3">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
@@ -296,6 +322,7 @@
         let matchesMapGlobal = {};
         let allBillsCache = [];
         let isAdminLoggedIn = false;
+        let currentFilter = 'all';
 
         function switchView(view) {
             const userView = document.getElementById('view-user');
@@ -549,6 +576,7 @@
         }
 
         async function loadAdminDashboard() {
+            await loadAdminMatches();
             const { data: bills } = await supabaseClient.from('bills').select('*').order('created_at', { ascending: false });
             allBillsCache = bills || [];
             document.getElementById('stat-total-bills').innerText = `${allBillsCache.length} บิล`;
@@ -593,8 +621,152 @@
             tbody.innerHTML = html;
         }
 
+        async function loadAdminMatches() {
+            const tbody = document.getElementById('admin-matches-tbody');
+            const { data, error } = await supabaseClient.from('matches').select('*').order('match_id');
+            if (error || !data) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-400">โหลดข้อมูลไม่สำเร็จ</td></tr>`; return; }
+            
+            matchesMapGlobal = {};
+            data.forEach(m => matchesMapGlobal[m.match_id] = m);
+
+            let html = '';
+            data.forEach(m => {
+                let hHome = m.home_score !== null ? m.home_score : '';
+                let hAway = m.away_score !== null ? m.away_score : '';
+                html += `
+                    <tr class="border-b border-slate-700/50">
+                        <td class="p-2 text-slate-300">${m.league} (${m.match_time})</td>
+                        <td class="p-2 font-medium">${m.home_team}</td>
+                        <td class="p-2 text-center text-amber-400">${m.hdp_value}</td>
+                        <td class="p-2 font-medium">${m.away_team}</td>
+                        <td class="p-2 text-center"><input type="number" id="score-home-${m.match_id}" value="${hHome}" class="w-12 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white"></td>
+                        <td class="p-2 text-center"><input type="number" id="score-away-${m.match_id}" value="${hAway}" class="w-12 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white"></td>
+                        <td class="p-2 text-center"><button onclick="saveMatchScore(${m.match_id})" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2 py-1 rounded text-[11px]">💾 บันทึก</button></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        async function saveMatchScore(matchId) {
+            const homeScore = parseInt(document.getElementById(`score-home-${matchId}`).value);
+            const awayScore = parseInt(document.getElementById(`score-away-${matchId}`).value);
+
+            if (isNaN(homeScore) || isNaN(awayScore)) { alert('กรุณากรอกสกอร์ให้ครบ'); return; }
+
+            const { error } = await supabaseClient.from('matches').update({ home_score: homeScore, away_score: awayScore }).eq('match_id', matchId);
+            if (error) { alert('บันทึกไม่สำเร็จ: ' + error.message); return; }
+            alert(`บันทึกสกอร์คู่ ID: ${matchId} สำเร็จ!`);
+            loadAdminMatches();
+        }
+
         async function calculateAllBillsAuto() {
-            alert('รันประมวลผลอัตโนมัติสำเร็จ');
+            const { data: matches } = await supabaseClient.from('matches').select('*');
+            const { data: bills } = await supabaseClient.from('bills').select('*');
+            if (!matches || !bills) return;
+
+            let matchMap = {};
+            matches.forEach(m => matchMap[m.match_id] = m);
+
+            for (let b of bills) {
+                let billWon = true, billLost = false, billHalfLost = false, allFinished = true, finalOdds = 1;
+
+                for (let bet of b.selected_bets) {
+                    let m = matchMap[bet.matchId];
+                    if (!m || m.home_score === null || m.away_score === null) { allFinished = false; break; }
+
+                    let hScore = Number(m.home_score), aScore = Number(m.away_score), hdp = Number(m.hdp_value);
+                    let isHomeFav = m.favorite_side === 'HOME';
+
+                    let betType = bet.type;
+                    if (!betType) {
+                        if (bet.description.includes('[สูง') || bet.description.includes('สูง (')) betType = 'OVER';
+                        else if (bet.description.includes('[ต่ำ') || bet.description.includes('ต่ำ (')) betType = 'UNDER';
+                        else if (bet.description.includes(m.home_team)) betType = 'HOME';
+                        else if (bet.description.includes(m.away_team)) betType = 'AWAY';
+                    }
+
+                    if (betType === 'HOME') {
+                        let diff = hScore - aScore;
+                        if (isHomeFav) {
+                            let netDiff = diff - hdp;
+                            if (netDiff > 0.25) finalOdds *= bet.odds;
+                            else if (netDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                            else if (netDiff === 0) {}
+                            else if (netDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                            else { billWon = false; billLost = true; }
+                        } else {
+                            let netDiff = diff + hdp;
+                            if (netDiff > 0.25) finalOdds *= bet.odds;
+                            else if (netDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                            else if (netDiff === 0) {}
+                            else if (netDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                            else { billWon = false; billLost = true; }
+                        }
+                    } else if (betType === 'AWAY') {
+                        let diff = aScore - hScore;
+                        let isAwayFav = !isHomeFav;
+                        if (isAwayFav) {
+                            let netDiff = diff - hdp;
+                            if (netDiff > 0.25) finalOdds *= bet.odds;
+                            else if (netDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                            else if (netDiff === 0) {}
+                            else if (netDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                            else { billWon = false; billLost = true; }
+                        } else {
+                            let netDiff = diff + hdp;
+                            if (netDiff > 0.25) finalOdds *= bet.odds;
+                            else if (netDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                            else if (netDiff === 0) {}
+                            else if (netDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                            else { billWon = false; billLost = true; }
+                        }
+                    } else if (betType === 'OVER') {
+                        let totalGoal = hScore + aScore;
+                        let overDiff = totalGoal - Number(m.over_goal);
+                        if (overDiff > 0.25) finalOdds *= bet.odds;
+                        else if (overDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                        else if (overDiff === 0) {}
+                        else if (overDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                        else { billWon = false; billLost = true; }
+                    } else if (betType === 'UNDER') {
+                        let totalGoal = hScore + aScore;
+                        let underDiff = Number(m.over_goal) - totalGoal;
+                        if (underDiff > 0.25) finalOdds *= bet.odds;
+                        else if (underDiff === 0.25) finalOdds *= 1 + (bet.odds - 1) / 2;
+                        else if (underDiff === 0) {}
+                        else if (underDiff === -0.25) { finalOdds *= 0.5; billHalfLost = true; }
+                        else { billWon = false; billLost = true; }
+                    }
+                }
+
+                if (!allFinished) continue;
+
+                let newStatus = 'เสีย', finalPayout = 0;
+                if (billLost) { 
+                    newStatus = 'เสีย'; 
+                    finalOdds = 0; 
+                    finalPayout = 0;
+                } else if (billHalfLost && !billWon) { 
+                    newStatus = 'เสียครึ่ง'; 
+                    finalPayout = Number(b.bet_amount) * finalOdds;
+                } else if (billWon && !billHalfLost) { 
+                    newStatus = 'ชนะ'; 
+                    finalPayout = Number(b.bet_amount) * finalOdds; 
+                } else { 
+                    newStatus = 'ได้บางส่วน'; 
+                    finalPayout = Number(b.bet_amount) * finalOdds; 
+                }
+
+                await supabaseClient.from('bills').update({
+                    status: newStatus,
+                    total_odds: finalOdds.toFixed(2),
+                    estimated_payout: finalPayout.toFixed(2)
+                }).eq('bill_id', b.bill_id);
+            }
+
+            alert('คำนวณผลบิลอัตโนมัติสำเร็จ!');
+            loadAdminDashboard();
         }
 
         function openIncomeReportModal() {
@@ -670,7 +842,6 @@
             document.getElementById('slip-id').innerText = bill.bill_id;
             document.getElementById('slip-player').innerText = bill.player_name;
             document.getElementById('slip-time').innerText = bill.created_at ? new Date(bill.created_at).toLocaleString('th-TH') : new Date().toLocaleString('th-TH');
-            document.getElementById('slip-amount').innerText = `${Number(b.bet_amount).toLocaleString()} บาท`; // ใช้ bill.bet_amount ข้างล่าง
             document.getElementById('slip-amount').innerText = `${Number(bill.bet_amount).toLocaleString()} บาท`;
             document.getElementById('slip-odds').innerText = bill.total_odds;
             document.getElementById('slip-payout').innerText = `${Number(bill.estimated_payout).toLocaleString()} บาท`;
