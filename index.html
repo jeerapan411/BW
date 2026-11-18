@@ -82,7 +82,7 @@
                     </div>
                     <div class="space-y-3 bg-slate-900/60 p-3 rounded-lg border border-slate-700">
                         <div>
-                            <label class="block text-xs text-slate-400 mb-1">ชื่อลูกค้า</label>
+                            <label class="block text-xs text-slate-400 mb-1">ชื่อผู้เล่น / ฉายา:</label>
                             <input type="text" id="player-name" oninput="loadUserBillsHistory()" placeholder="ระบุชื่อของคุณ..." class="w-full bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white focus:outline-none focus:border-amber-500">
                         </div>
                         <div>
@@ -195,20 +195,22 @@
             <div id="bills-section-target" class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden p-4 space-y-3">
                 <div class="flex justify-between items-center border-b border-slate-700 pb-3">
                     <h3 class="font-bold text-amber-300 text-sm">📋 รายการโพยทั้งหมดในระบบ</h3>
-                    <button onclick="calculateAllBillsAuto()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-bold">⚡ คำนวณผลบิลออโต้</button>
+                    <div class="flex gap-2">
+                        <button onclick="calculateAllBillsAuto()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-xs font-bold">⚡ คำนวณผลบิลออโต้</button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto max-h-96 overflow-y-auto">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead>
                             <tr class="bg-slate-900 text-slate-400 uppercase text-[11px] border-b border-slate-700 sticky top-0">
                                 <th class="p-2.5">รหัสบิล / เวลา</th>
-                                <th class="p-2.5">ลูกค้า</th>
+                                <th class="p-2.5">ผู้เล่น</th>
                                 <th class="p-2.5 text-center">จำนวนคู่</th>
                                 <th class="p-2.5 text-right">ยอดแทง (บาท)</th>
                                 <th class="p-2.5 text-right">ตัวคูณสุทธิ</th>
                                 <th class="p-2.5 text-right">ยอดจ่ายสุทธิ</th>
                                 <th class="p-2.5 text-center">สถานะ</th>
-                                <th class="p-2.5 text-center">จัดการ</th>
+                                <th class="p-2.5 text-center">จัดการบิล</th>
                             </tr>
                         </thead>
                         <tbody id="admin-bills-table" class="divide-y divide-slate-700">
@@ -236,7 +238,7 @@
             <div id="printable-table-container" class="bg-slate-900 p-6 rounded-xl border border-slate-700 space-y-4 text-xs text-slate-100">
                 <div class="text-center border-b border-slate-800 pb-3">
                     <h2 class="text-lg font-bold text-amber-400">⚽ โปรแกรมฟุตบอลสเต็ปออนไลน์ (ประจำวัน)</h2>
-                    <p class="text-[11px] text-slate-400">พิมพ์รหัสคู่ที่ต้องการส่งให้แอดมินทางไลน์เพื่อเปิดบิลได้เลยค่ะ</p>
+                    <p class="text-[11px] text-slate-400">พิมพ์รหัสคู่ที่ต้องการส่งให้แอดมินทางไลน์เพื่อเปิดบิลได้เลยครับ</p>
                 </div>
                 <div id="export-table-content" class="space-y-3">
                     <!-- ตารางจะถูกเรนเดอร์แทรกตรงนี้ -->
@@ -315,7 +317,7 @@
             
             <div id="printable-slip" class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3 text-xs text-slate-200">
                 <div class="text-center border-b border-slate-800 pb-2">
-                    <h4 class="font-bold text-amber-400 text-sm">⚽ Mbeumo Way </h4>
+                    <h4 class="font-bold text-amber-400 text-sm">⚽ โต๊ะเยาวราช (สเต็ปออนไลน์)</h4>
                     <p class="text-[10px] text-slate-400" id="slip-time">-</p>
                 </div>
                 <div class="flex justify-between font-semibold">
@@ -491,7 +493,6 @@
                 return;
             }
 
-            // จัดกลุ่มตามลีก หรือแสดงเรียงยาวต่อเนื่องจากรหัส 1 ไปจนจบ
             let html = `
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
@@ -542,7 +543,6 @@
             document.getElementById('export-table-modal').classList.add('hidden');
         }
 
-        // ฟังก์ชันแปลงตารางเป็นภาพ PNG ยาวต่อเนื่อง
         function downloadTableImage() {
             const tableElement = document.getElementById('printable-table-container');
             html2canvas(tableElement, { scale: 2, backgroundColor: '#0f172a' }).then(canvas => {
@@ -633,7 +633,7 @@
             let totalOdds = 1;
             selectedBets.forEach(b => totalOdds *= b.odds);
 
-            if (!playerName) { alert('กรุณากรอกชื่อลูกค้าก่อนส่งบิล'); document.getElementById('player-name').focus(); return; }
+            if (!playerName) { alert('กรุณากรอกชื่อผู้เล่นก่อนส่งบิล'); document.getElementById('player-name').focus(); return; }
             if (selectedBets.length === 0) { alert('กรุณาเลือกคู่แข่งขันอย่างน้อย 1 คู่ครับ'); return; }
 
             const randomBillId = 'B' + Math.floor(1000 + Math.random() * 9000);
@@ -748,13 +748,28 @@
                         <td class="p-2.5 text-right">${b.total_odds}</td>
                         <td class="p-2.5 text-right text-emerald-400 font-bold">${Number(b.estimated_payout).toLocaleString()}</td>
                         <td class="p-2.5 text-center font-bold ${statusColor}">${b.status}</td>
-                        <td class="p-2.5 text-center">
-                            <button onclick='viewBillDetail(${JSON.stringify(b)})' class="bg-slate-700 hover:bg-amber-600 text-white px-2.5 py-1 rounded text-[11px]">🔍 ดูสลิป</button>
+                        <td class="p-2.5 text-center space-x-1">
+                            <button onclick='viewBillDetail(${JSON.stringify(b)})' class="bg-slate-700 hover:bg-amber-600 text-white px-2 py-1 rounded text-[11px]">🔍 ดูสลิป</button>
+                            <button onclick='deleteBill("${b.bill_id}")' class="bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded text-[11px]">🗑️ ลบ</button>
                         </td>
                     </tr>
                 `;
             });
             tbody.innerHTML = html;
+        }
+
+        // ฟังก์ชันลบบิลออกจากฐานข้อมูล Supabase
+        async function deleteBill(billId) {
+            if (!confirm(`คุณต้องการลบบิลรหัส ${billId} ออกจากระบบใช่หรือไม่?`)) return;
+
+            const { error } = await supabaseClient.from('bills').delete().eq('bill_id', billId);
+            if (error) {
+                alert('ลบบิลไม่สำเร็จ: ' + error.message);
+                return;
+            }
+
+            alert(`✅ ลบบิลรหัส ${billId} สำเร็จเรียบร้อย`);
+            loadAdminDashboard(); // รีเฟรชข้อมูลหน้าแอดมินใหม่ทันที
         }
 
         async function loadAdminMatches() {
