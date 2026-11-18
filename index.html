@@ -390,7 +390,10 @@
                 if (error) throw error;
                 matchesData = data || [];
                 matchesMapGlobal = {};
-                matchesData.forEach(m => matchesMapGlobal[m.match_id] = m);
+                matchesData.forEach(m => {
+                    matchesMapGlobal[m.match_id] = m;
+                    matchesMapGlobal[String(m.match_id)] = m;
+                });
 
                 if (matchesData.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">ยังไม่มีข้อมูลโปรแกรมบอลใน Supabase</td></tr>`; return; }
 
@@ -607,8 +610,6 @@
             let filtered = [...allBillsCache];
             if (type === 'pending') {
                 filtered = allBillsCache.filter(b => b.status === 'รอผลบอล');
-            } else if (type === 'turnover') {
-                // แสดงทั้งหมดแต่เรียงหรือเน้นย้ำ
             }
             renderAdminBillsTable(filtered);
         }
@@ -650,9 +651,11 @@
             if (error || !data) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-400">โหลดข้อมูลไม่สำเร็จ</td></tr>`; return; }
             
             matchesMapGlobal = {};
-            data.forEach(m => matchesMapGlobal[m.match_id] = m);
+            data.forEach(m => {
+                matchesMapGlobal[m.match_id] = m;
+                matchesMapGlobal[String(m.match_id)] = m;
+            });
 
-            // กรองคู่ที่ถึงเวลาแข่งขันแล้วหรือแข่งเสร็จแล้วขึ้นมาไว้ด้านบนเพื่อความอัจฉริยะ
             let sortedMatches = data.sort((a, b) => {
                 let aStarted = isMatchStarted(a.match_time) ? 1 : 0;
                 let bStarted = isMatchStarted(b.match_time) ? 1 : 0;
@@ -689,14 +692,15 @@
         }
 
         async function saveMatchScore(matchId) {
-            const homeScore = parseInt(document.getElementById(`score-home-${matchId}`).value);
-            const awayScore = parseInt(document.getElementById(`score-away-${matchId}`).value);
+            const homeScoreInput = document.getElementById(`score-home-${matchId}`).value.trim();
+            const awayScoreInput = document.getElementById(`score-away-${matchId}`).value.trim();
 
-            if (isNaN(homeScore) || isNaN(awayScore)) { alert('กรุณากรอกสกอร์ตัวเลขให้ครบถ้วน'); return; }
+            let homeScore = homeScoreInput === '' ? null : parseInt(homeScoreInput);
+            let awayScore = awayScoreInput === '' ? null : parseInt(awayScoreInput);
 
             const { error } = await supabaseClient.from('matches').update({ home_score: homeScore, away_score: awayScore }).eq('match_id', matchId);
             if (error) { alert('บันทึกไม่สำเร็จ: ' + error.message); return; }
-            alert(`✅ อัปเดตสกอร์คู่ ID: ${matchId} สำเร็จ!\n(สามารถกดปุ่ม "คำนวณผลบิลออโต้" ด้านล่างเพื่ออัปเดตสถานะบิลได้ทันที)`);
+            alert(`✅ อัปเดตสกอร์คู่ ID: ${matchId} สำเร็จ!`);
             loadAdminMatches();
         }
 
@@ -713,7 +717,11 @@
 
                 for (let bet of b.selected_bets) {
                     let m = matchMap[bet.matchId];
-                    if (!m || m.home_score === null || m.away_score === null) { allFinished = false; break; }
+                    // เงื่อนไขฉลาด: ถ้าคู่ไหนช่องสกอร์ยังว่างเปล่า (ไม่มีตัวเลข) ให้ถือว่ายังไม่จบ และปรับสถานะบิลเป็นรอผล
+                    if (!m || m.home_score === null || m.away_score === null || m.home_score === '' || m.away_score === '') { 
+                        allFinished = false; 
+                        break; 
+                    }
 
                     let hScore = Number(m.home_score), aScore = Number(m.away_score), hdp = Number(m.hdp_value);
                     let isHomeFav = m.favorite_side === 'HOME';
@@ -780,7 +788,11 @@
                     }
                 }
 
-                if (!allFinished) continue;
+                if (!allFinished) {
+                    // ถ้ายังกรอกสกอร์ไม่ครบทุกคู่ในบิล ให้คงสถานะเป็นรอผลบอล
+                    await supabaseClient.from('bills').update({ status: 'รอผลบอล' }).eq('bill_id', b.bill_id);
+                    continue;
+                }
 
                 let newStatus = 'เสีย', finalPayout = 0;
                 if (billLost) { 
@@ -889,14 +901,26 @@
 
             let betsHtml = '';
             bill.selected_bets.forEach((bet) => {
+                // ดึงข้อมูลสกอร์จากตาราง matches ในหน่วยความจำ (ถ้ามี) มาแสดงในสลิป
+                let matchInfo = matchesMapGlobal[bet.matchId];
+                let scoreText = `<span class="text-yellow-400">[ยังไม่แข่ง / รอผล]</span>`;
+                
+                if (matchInfo && matchInfo.home_score !== null && matchInfo.match_score !== '' && matchInfo.away_score !== null) {
+                    scoreText = `<span class="text-emerald-400 font-bold">สกอร์: ${matchInfo.home_score} - ${matchInfo.away_score}</span>`;
+                }
+
                 betsHtml += `
-                    <div class="border-b border-slate-800/60 pb-1.5 last:border-0">
+                    <div class="border-b border-slate-800/60 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0 space-y-1">
                         <div class="flex justify-between items-center text-[11px]">
                             <div>
                                 <span class="text-amber-400 font-bold">[รหัส: ${bet.code}]</span> 
                                 <span class="text-white font-medium">${bet.description}</span>
                             </div>
-                            <span class="text-slate-400 whitespace-nowrap ml-2">น้ำ: ${bet.odds}</span>
+                            <span class="text-slate-300 whitespace-nowrap ml-2">ค่าน้ำ: ${bet.odds}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 bg-slate-950/40 p-1 rounded">
+                            <span>คู่แข่งขัน: ${matchInfo ? matchInfo.home_team + ' vs ' + matchInfo.away_team : ' - '}</span>
+                            <span>${scoreText}</span>
                         </div>
                     </div>
                 `;
