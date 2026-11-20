@@ -166,12 +166,12 @@
                 </div>
             </div>
 
-            <!-- ส่วนจัดการผลการแข่งขัน (3 โหมดฉลาดแยกชัดเจน) -->
+            <!-- ส่วนจัดการผลการแข่งขัน (3 โหมดฉลาด + กดชื่อทีมค้นหาผลบอล Google) -->
             <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-4 space-y-4">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-700 pb-3 gap-3">
                     <div>
                         <h3 class="font-bold text-amber-300 text-sm">⚽ จัดการผลสกอร์การแข่งขัน</h3>
-                        <p class="text-[11px] text-slate-400">เลือกโหมดการทำงานให้เหมาะกับจังหวะการคีย์สกอร์ได้เลยครับ</p>
+                        <p class="text-[11px] text-slate-400">คลิกที่ชื่อทีมเพื่อเปิดค้นหา "ผลบอล" บน Google ได้ทันที</p>
                     </div>
 
                     <!-- 3 ปุ่มเมนูจัดการสกอร์ -->
@@ -200,9 +200,9 @@
                         <thead>
                             <tr class="bg-slate-900 text-slate-400 uppercase text-[11px] border-b border-slate-700 sticky top-0">
                                 <th class="p-2 border border-slate-700">ID / ลีก / เวลา</th>
-                                <th class="p-2 border border-slate-700">ทีมเหย้า</th>
+                                <th class="p-2 border border-slate-700">ทีมเหย้า (คลิกเช็กผล)</th>
                                 <th class="p-2 border border-slate-700 text-center">ราคา</th>
-                                <th class="p-2 border border-slate-700">ทีมเยือน</th>
+                                <th class="p-2 border border-slate-700">ทีมเยือน (คลิกเช็กผล)</th>
                                 <th class="p-2 border border-slate-700 text-center">สกอร์เหย้า</th>
                                 <th class="p-2 border border-slate-700 text-center">สกอร์เยือน</th>
                                 <th class="p-2 border border-slate-700 text-center">จัดการ / อัปเดต</th>
@@ -372,7 +372,7 @@
 
     <!-- SCRIPT จัดการระบบ (Supabase) -->
     <script>
-        const SUPABASE_URL = 'https://lxppyaqemxqrwjwdixut.supabase.co'; 
+        const SUPABASE_URL = 'https://lxppyaqemxqrwjdixut.supabase.co'; 
         const SUPABASE_KEY = 'sb_publishable_q2HZnVNw5sbtCSUz237HtA_CZe1rSSh'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -401,6 +401,11 @@
                 if (frac === 0.75) return `${whole}½+${whole + 1}`;
             }
             return String(val);
+        }
+
+        function buildGoogleResultUrl(match) {
+            const q = encodeURIComponent(`ผลบอล ${match.home_team} ${match.away_team}`);
+            return `https://www.google.com/search?q=${q}`;
         }
 
         function switchView(view) {
@@ -439,7 +444,6 @@
             alert('ออกจากระบบแอดมินเรียบร้อย');
         }
 
-        // แปลงเวลาแข่ง "HH:MM" เป็นนาทีนับจากเที่ยงคืน (รองรับคู่ข้ามคืนหลังเที่ยงคืน)
         function getMatchMinutesFromMidnight(matchTimeStr) {
             if (!matchTimeStr) return null;
             const parts = matchTimeStr.split(':');
@@ -450,7 +454,6 @@
             return h * 60 + m;
         }
 
-        // คำนวณสถานะเวลาของคู่บอลแบบยืดหยุ่น (เตะอยู่ ~105 นาทีเผื่อทดเวลา/พักครึ่ง)
         function getMatchTimeStatus(matchTimeStr) {
             const matchMin = getMatchMinutesFromMidnight(matchTimeStr);
             if (matchMin === null) return 'unknown';
@@ -458,14 +461,13 @@
             const now = new Date();
             const nowMin = now.getHours() * 60 + now.getMinutes();
 
-            // ปรับระยะห่างแบบรองรับรอยต่อเที่ยงคืน (1440 นาที)
             let diff = nowMin - matchMin;
             if (diff < -720) diff += 1440;
             if (diff > 720) diff -= 1440;
 
-            if (diff < 0) return 'upcoming';     // ยังไม่ถึงเวลาเตะ
-            if (diff <= 105) return 'live';      // กำลังเตะอยู่ (เริ่มเตะแล้ว และยังไม่เกิน ~105 นาที)
-            return 'finished';                   // เกินกรอบเวลาแข่งแล้ว / น่าจะจบแล้ว
+            if (diff < 0) return 'upcoming';
+            if (diff <= 105) return 'live';
+            return 'finished';
         }
 
         function isMatchStarted(matchTimeStr) {
@@ -892,7 +894,6 @@
                 matchesMapGlobal[String(m.match_id)] = m;
             });
 
-            // กรองรายการตามโหมดที่เลือก (live / edit / all)
             const filteredMatches = data.filter(m => {
                 const timeStatus = getMatchTimeStatus(m.match_time);
                 const hasScore = (m.home_score !== null && m.home_score !== '') || (m.away_score !== null && m.away_score !== '');
@@ -903,7 +904,7 @@
                 if (currentScoreMode === 'edit') {
                     return hasScore || timeStatus === 'finished';
                 }
-                return true; // 'all'
+                return true;
             });
 
             if (filteredMatches.length === 0) {
@@ -919,6 +920,7 @@
                 let hHome = m.home_score !== null ? m.home_score : '';
                 let hAway = m.away_score !== null ? m.away_score : '';
                 let timeStatus = getMatchTimeStatus(m.match_time);
+                const googleUrl = buildGoogleResultUrl(m);
 
                 let badge = `<span class="text-slate-400 text-[10px]">⏳ ยังไม่เตะ</span>`;
                 if (timeStatus === 'live') badge = `<span class="text-emerald-400 text-[10px] font-bold">🟢 กำลังเตะ (~90+ นาที)</span>`;
@@ -930,9 +932,13 @@
                             <span class="text-slate-500">#${m.match_id}</span> <b class="text-amber-300">${m.league}</b><br>
                             <span>${m.match_time}</span> ${badge}
                         </td>
-                        <td class="p-2 font-medium text-white border border-slate-700">[${m.home_code}] ${m.home_team}</td>
+                        <td class="p-2 font-medium text-white border border-slate-700">
+                            [${m.home_code}] <a href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="ค้นหาผลบอล ${m.home_team} vs ${m.away_team} บน Google" class="text-cyan-300 hover:text-amber-300 underline decoration-cyan-500/50">${m.home_team}</a>
+                        </td>
                         <td class="p-2 text-center text-emerald-400 font-bold border border-slate-700">${formatHdpDisplay(m.hdp_value)}</td>
-                        <td class="p-2 font-medium text-white border border-slate-700">[${m.away_code}] ${m.away_team}</td>
+                        <td class="p-2 font-medium text-white border border-slate-700">
+                            [${m.away_code}] <a href="${googleUrl}" target="_blank" rel="noopener noreferrer" title="ค้นหาผลบอล ${m.home_team} vs ${m.away_team} บน Google" class="text-cyan-300 hover:text-amber-300 underline decoration-cyan-500/50">${m.away_team}</a>
+                        </td>
                         <td class="p-2 text-center border border-slate-700"><input type="number" id="score-home-${m.match_id}" value="${hHome}" class="w-14 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white font-bold"></td>
                         <td class="p-2 text-center border border-slate-700"><input type="number" id="score-away-${m.match_id}" value="${hAway}" class="w-14 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white font-bold"></td>
                         <td class="p-2 text-center border border-slate-700">
