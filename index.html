@@ -25,7 +25,7 @@
                 <h1 id="main-title" class="text-xl font-bold text-amber-400 flex items-center gap-2">
                     ⚽ แทงด่วน [ตารางสเต็ป] รายการแข่งขันฟุตบอล
                 </h1>
-                <p class="text-xs text-slate-400">ระบบเชื่อมต่อ Supabase Database (เสถียรและรวดเร็ว)</p>
+                <p class="text-xs text-slate-400">ระบบเชื่อมต่อ Supabase Database (แสดงค่าน้ำครบทุกคู่)</p>
             </div>
             <div class="flex items-center gap-3">
                 <button onclick="loadMatches()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">
@@ -41,37 +41,41 @@
     <main class="max-w-7xl mx-auto px-4 mt-6">
 
         <!-- ==================== VIEW 1: หน้าแทงบอลสำหรับลูกค้าทั่วไป ==================== -->
-        <div id="view-user" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <section class="lg:col-span-2 space-y-4">
+        <div id="view-user" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <section class="lg:col-span-8 space-y-4">
                 <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl overflow-hidden">
                     <div class="bg-slate-700/50 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
-                        <h2 class="font-semibold text-amber-300 text-sm">📋 ตารางแข่งขันและรหัสเลือกคู่ (ทีมต่อ <span class="text-red-400 font-bold">สีแดง*</span>)</h2>
-                        <span class="text-xs text-slate-400">คู่ที่ถึงเวลาแข่งขันแล้ว ระบบจะปิดรับแทงอัตโนมัติ</span>
+                        <h2 class="font-semibold text-amber-300 text-sm">📋 ตารางแข่งขัน & ค่าน้ำ (ทีมต่อ <span class="text-red-400 font-bold">*สีแดง</span>)</h2>
+                        <span class="text-[11px] text-slate-400">คลิกที่ปุ่มรหัสเพื่อเลือกคู่ลงบิล</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs border-collapse">
+                        <table class="w-full text-center text-xs border-collapse whitespace-nowrap">
                             <thead>
-                                <tr class="bg-slate-900/80 text-slate-400 uppercase text-[11px] border-b border-slate-700">
-                                    <th class="p-2.5 text-center">เวลา</th>
-                                    <th class="p-2.5 text-center">รหัสเหย้า</th>
-                                    <th class="p-2.5">ทีมเหย้า</th>
-                                    <th class="p-2.5 text-center">แฮนดิแคป</th>
-                                    <th class="p-2.5 text-center">รหัสเยือน</th>
-                                    <th class="p-2.5">ทีมเยือน</th>
-                                    <th class="p-2.5 text-center">รหัสสูง</th>
-                                    <th class="p-2.5 text-center">สูง/ต่ำ</th>
-                                    <th class="p-2.5 text-center">รหัสต่ำ</th>
+                                <tr class="bg-slate-950 text-slate-300 text-[11px] border-b border-slate-700">
+                                    <th class="p-2 border-r border-slate-800">เวลา</th>
+                                    <th class="p-2 border-r border-slate-800">รหัส</th>
+                                    <th class="p-2 border-r border-slate-800">ทีมเหย้า</th>
+                                    <th class="p-2 border-r border-slate-800 text-cyan-300">น้ำ</th>
+                                    <th class="p-2 border-r border-slate-800 text-amber-300">ราคา</th>
+                                    <th class="p-2 border-r border-slate-800 text-cyan-300">น้ำ</th>
+                                    <th class="p-2 border-r border-slate-800">รหัส</th>
+                                    <th class="p-2 border-r border-slate-700">ทีมเยือน</th>
+                                    <th class="p-2 border-r border-slate-800">สูง</th>
+                                    <th class="p-2 border-r border-slate-800 text-cyan-300">น้ำ</th>
+                                    <th class="p-2 border-r border-slate-800 text-emerald-300">สกอร์</th>
+                                    <th class="p-2 border-r border-slate-800 text-cyan-300">น้ำ</th>
+                                    <th class="p-2">ต่ำ</th>
                                 </tr>
                             </thead>
-                            <tbody id="matches-table-body" class="divide-y divide-slate-700/50">
-                                <tr><td colspan="9" class="p-6 text-center text-slate-400">กำลังโหลดโปรแกรมแข่งขัน...</td></tr>
+                            <tbody id="matches-table-body" class="divide-y divide-slate-700/60">
+                                <tr><td colspan="13" class="p-6 text-center text-slate-400">กำลังโหลดโปรแกรมแข่งขัน...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <section class="space-y-4">
+            <section class="lg:col-span-4 space-y-4">
                 <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-4 sticky top-20 space-y-4">
                     <h2 class="font-bold text-amber-400 border-b border-slate-700 pb-2 flex justify-between items-center">
                         <span>🛒 บิลโพยของคุณ (สเต็ป)</span>
@@ -123,13 +127,12 @@
 
         <!-- ==================== VIEW 2: หน้าแอดมิน DASHBOARD ==================== -->
         <div id="view-admin" class="hidden space-y-6">
-            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex justify-between items-center shadow-lg">
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl flex justify-between items-center shadow-lg flex-wrap gap-3">
                 <div>
                     <h2 class="text-lg font-bold text-amber-400">📊 แผงควบคุมผู้ดูแลระบบ (Admin Dashboard)</h2>
                     <p class="text-xs text-slate-400">โหมดแอดมิน (จัดการบิลและตรวจสอบผล)</p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
-                    <!-- ปุ่มเมนูออกภาพตารางให้ลูกค้าทางไลน์ -->
                     <button onclick="openExportTableModal()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
                         📸 ออกภาพตารางให้ลูกค้า (ส่งไลน์)
                     </button>
@@ -166,7 +169,7 @@
             <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-4 space-y-4">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700 pb-3 gap-2">
                     <div>
-                        <h3 class="font-bold text-amber-300 text-sm">⚡ บันทึกและแก้ไขสกอร์การแข่งขัน (คู่ที่ต้องสรุปผล)</h3>
+                        <h3 class="font-bold text-amber-300 text-sm">⚡ บันทึกและแก้ไขสกอร์การแข่งขัน (เรียงตามตารางต้นฉบับ)</h3>
                         <p class="text-[11px] text-slate-400">พิมพ์หรือแก้สกอร์แล้วกดอัปเดตเพื่อบันทึกทับได้ทันที</p>
                     </div>
                     <button onclick="loadAdminMatches()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-xs">🔄 รีเฟรชตารางสกอร์</button>
@@ -175,9 +178,9 @@
                     <table class="w-full text-left text-xs border-collapse">
                         <thead>
                             <tr class="bg-slate-900 text-slate-400 uppercase text-[11px] border-b border-slate-700 sticky top-0">
-                                <th class="p-2">ลีก / เวลา</th>
+                                <th class="p-2">ID / ลีก / เวลา</th>
                                 <th class="p-2">ทีมเหย้า</th>
-                                <th class="p-2 text-center">แฮนดิแคป</th>
+                                <th class="p-2 text-center">ราคา</th>
                                 <th class="p-2">ทีมเยือน</th>
                                 <th class="p-2 text-center">สกอร์เหย้า</th>
                                 <th class="p-2 text-center">สกอร์เยือน</th>
@@ -223,28 +226,23 @@
 
     </main>
 
-    <!-- MODAL: หน้าต่างออกภาพตารางให้ลูกค้าทางไลน์ (ยาวต่อเนื่อง) -->
-    <div id="export-table-modal" class="hidden fixed inset-0 bg-slate-950/90 z-50 flex justify-center items-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-4xl shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+    <!-- MODAL: หน้าต่างออกภาพตารางให้ลูกค้าทางไลน์ (ดีไซน์โพยโต๊ะบอลมาตรฐานตามต้นแบบ) -->
+    <div id="export-table-modal" class="hidden fixed inset-0 bg-slate-950/90 z-50 flex justify-center items-center p-2 md:p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 md:p-6 w-full max-w-5xl shadow-2xl space-y-4 max-h-[94vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
                 <div>
                     <h3 class="text-base font-bold text-cyan-400">📸 ภาพตารางแข่งขันสำหรับส่งให้ลูกค้าทางไลน์</h3>
-                    <p class="text-xs text-slate-400">จัดเรียงรหัส 1 ไปจนจบ อ่านง่าย ยาวต่อเนื่องในภาพเดียว</p>
+                    <p class="text-xs text-slate-400">รูปแบบโพยมาตรฐาน แสดงรหัส ชื่อทีม ค่าน้ำ และราคาครบถ้วน</p>
                 </div>
                 <button onclick="closeExportTableModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
             </div>
 
-            <!-- ส่วนของภาพตารางที่จะถูกแปลงเป็นรูปภาพ -->
-            <div id="printable-table-container" class="bg-slate-900 p-6 rounded-xl border border-slate-700 space-y-4 text-xs text-slate-100">
-                <div class="text-center border-b border-slate-800 pb-3">
-                    <h2 class="text-lg font-bold text-amber-400">⚽ โปรแกรมฟุตบอลสเต็ปออนไลน์ (ประจำวัน)</h2>
-                    <p class="text-[11px] text-slate-400">พิมพ์รหัสคู่ที่ต้องการส่งให้แอดมินทางไลน์เพื่อเปิดบิลได้เลยครับ</p>
-                </div>
-                <div id="export-table-content" class="space-y-3">
-                    <!-- ตารางจะถูกเรนเดอร์แทรกตรงนี้ -->
-                </div>
-                <div class="text-center text-[10px] text-slate-500 pt-2 border-t border-slate-800">
-                    โต๊ะเยาวราช - อัปเดตราคาและโปรแกรมเรียลไทม์
+            <!-- ส่วนของภาพตารางที่จะถูกแปลงเป็นรูปภาพ (พื้นสว่าง คมชัด แบบโพยมาตรฐาน) -->
+            <div class="overflow-x-auto">
+                <div id="printable-table-container" class="bg-white text-slate-900 p-2 min-w-[760px] mx-auto border border-slate-400">
+                    <div id="export-table-content">
+                        <!-- ตารางจะถูกเรนเดอร์แทรกตรงนี้ -->
+                    </div>
                 </div>
             </div>
 
@@ -356,7 +354,7 @@
 
     <!-- SCRIPT จัดการระบบ (Supabase) -->
     <script>
-        const SUPABASE_URL = 'https://lxppyaqemxqrwjwdixut.supabase.co'; 
+        const SUPABASE_URL = 'https://lxppyaqemxqrwjdixut.supabase.co'; 
         const SUPABASE_KEY = 'sb_publishable_q2HZnVNw5sbtCSUz237HtA_CZe1rSSh'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -366,6 +364,26 @@
         let allBillsCache = [];
         let isAdminLoggedIn = false;
         let currentFilter = 'all';
+
+        // แปลงราคาตัวเลขให้เป็นภาษาโพยโต๊ะบอลมาตรฐาน (เช่น 0 -> เสมอ, 0.25 -> ปป, 0.5 -> ½, 0.75 -> ½+1)
+        function formatHdpDisplay(val) {
+            const num = parseFloat(val);
+            if (isNaN(num) || num === 0) return 'เสมอ';
+            const whole = Math.floor(num);
+            const frac = Number((num - whole).toFixed(2));
+            
+            if (whole === 0) {
+                if (frac === 0.25) return 'ปป';
+                if (frac === 0.5) return '½';
+                if (frac === 0.75) return '½+1';
+            } else {
+                if (frac === 0) return whole.toFixed(1);
+                if (frac === 0.25) return `${whole}+${whole}½`;
+                if (frac === 0.5) return `${whole}½`;
+                if (frac === 0.75) return `${whole}½+${whole + 1}`;
+            }
+            return String(val);
+        }
 
         function switchView(view) {
             const userView = document.getElementById('view-user');
@@ -426,10 +444,8 @@
         async function loadMatches() {
             const tbody = document.getElementById('matches-table-body');
             try {
-                const { data, error } = await supabaseClient
-    .from('matches')
-    .select('*')
-    .order('match_id', { ascending: true });
+                // เรียงตาม match_id เพื่อรักษาลำดับตามภาพต้นฉบับ 100%
+                const { data, error } = await supabaseClient.from('matches').select('*').order('match_id', { ascending: true });
                 if (error) throw error;
                 matchesData = data || [];
                 matchesMapGlobal = {};
@@ -438,38 +454,48 @@
                     matchesMapGlobal[String(m.match_id)] = m;
                 });
 
-                if (matchesData.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">ยังไม่มีข้อมูลโปรแกรมบอลใน Supabase</td></tr>`; return; }
+                if (matchesData.length === 0) { tbody.innerHTML = `<tr><td colspan="13" class="p-6 text-center text-slate-400">ยังไม่มีข้อมูลโปรแกรมบอลใน Supabase</td></tr>`; return; }
 
                 let html = '', currentLeague = '';
                 matchesData.forEach(m => {
                     if (m.league !== currentLeague) {
                         currentLeague = m.league;
-                        html += `<tr class="bg-amber-900/40 border-y border-amber-500/30"><td colspan="9" class="p-2.5 text-center font-bold text-amber-300 uppercase">🏆 ${currentLeague}</td></tr>`;
+                        html += `<tr class="bg-slate-700/80 border-y border-slate-600"><td colspan="13" class="p-2 text-center font-bold text-amber-300 tracking-wide">🏆 ${currentLeague}</td></tr>`;
                     }
-                    let homeStyle = m.favorite_side === 'HOME' ? 'text-red-400 font-bold' : 'text-slate-200';
-                    let awayStyle = m.favorite_side === 'AWAY' ? 'text-red-400 font-bold' : 'text-slate-200';
-                    let hdpText = m.hdp_value;
+                    let homeStyle = m.favorite_side === 'HOME' ? 'text-red-400 font-bold underline decoration-red-400/50' : 'text-slate-200';
+                    let awayStyle = m.favorite_side === 'AWAY' ? 'text-red-400 font-bold underline decoration-red-400/50' : 'text-slate-200';
+                    let hdpText = formatHdpDisplay(m.hdp_value);
+                    let ouText = formatHdpDisplay(m.over_goal);
+
+                    let homeOdds = Number(m.home_odds || 1.90).toFixed(2);
+                    let awayOdds = Number(m.away_odds || 1.90).toFixed(2);
+                    let overOdds = Number(m.over_odds || 1.90).toFixed(2);
+                    let underOdds = Number(m.under_odds || 1.90).toFixed(2);
 
                     let started = isMatchStarted(m.match_time);
 
-                    let homeBtn = started ? `<span class="bg-slate-800 text-slate-500 px-2 py-1 rounded text-[10px]">ปิดรับแทง</span>` : `<button onclick="addBet('${m.match_id}', 'HOME', '${m.home_code}')" class="bg-slate-700 hover:bg-amber-600 px-2 py-1 rounded text-amber-300 font-bold">${m.home_code}</button>`;
-                    let awayBtn = started ? `<span class="bg-slate-800 text-slate-500 px-2 py-1 rounded text-[10px]">ปิดรับแทง</span>` : `<button onclick="addBet('${m.match_id}', 'AWAY', '${m.away_code}')" class="bg-slate-700 hover:bg-amber-600 px-2 py-1 rounded text-amber-300 font-bold">${m.away_code}</button>`;
-                    let overBtn = started ? `<span class="bg-slate-800 text-slate-500 px-1.5 py-1 rounded text-[10px]">-</span>` : `<button onclick="addBet('${m.match_id}', 'OVER', '${m.over_code}')" class="bg-slate-700 hover:bg-amber-600 px-1.5 py-1 rounded text-cyan-300 font-bold">${m.over_code}</button>`;
-                    let underBtn = started ? `<span class="bg-slate-800 text-slate-500 px-1.5 py-1 rounded text-[10px]">-</span>` : `<button onclick="addBet('${m.match_id}', 'UNDER', '${m.under_code}')" class="bg-slate-700 hover:bg-amber-600 px-1.5 py-1 rounded text-cyan-300 font-bold">${m.under_code}</button>`;
+                    let homeBtn = started ? `<span class="text-slate-500 text-[10px]">ปิด</span>` : `<button onclick="addBet('${m.match_id}', 'HOME', '${m.home_code}')" class="bg-slate-700 hover:bg-amber-600 px-2 py-0.5 rounded text-red-300 font-bold">${m.home_code}</button>`;
+                    let awayBtn = started ? `<span class="text-slate-500 text-[10px]">ปิด</span>` : `<button onclick="addBet('${m.match_id}', 'AWAY', '${m.away_code}')" class="bg-slate-700 hover:bg-amber-600 px-2 py-0.5 rounded text-red-300 font-bold">${m.away_code}</button>`;
+                    let overBtn = started ? `<span class="text-slate-500 text-[10px]">-</span>` : `<button onclick="addBet('${m.match_id}', 'OVER', '${m.over_code}')" class="bg-slate-700 hover:bg-cyan-600 px-1.5 py-0.5 rounded text-cyan-300 font-bold">${m.over_code}</button>`;
+                    let underBtn = started ? `<span class="text-slate-500 text-[10px]">-</span>` : `<button onclick="addBet('${m.match_id}', 'UNDER', '${m.under_code}')" class="bg-slate-700 hover:bg-cyan-600 px-1.5 py-0.5 rounded text-cyan-300 font-bold">${m.under_code}</button>`;
 
-                    let rowOpacity = started ? 'opacity-50 bg-slate-900/30' : 'hover:bg-slate-700/35';
+                    let rowOpacity = started ? 'opacity-50 bg-slate-900/40' : 'hover:bg-slate-700/40';
 
                     html += `
-                        <tr class="${rowOpacity} border-b border-slate-700/40 transition">
-                            <td class="p-2.5 text-center text-slate-400">${m.match_time} ${started ? '<span class="text-red-400 text-[10px] block font-bold">🔴 แข่งแล้ว</span>' : ''}</td>
-                            <td class="p-2.5 text-center">${homeBtn}</td>
-                            <td class="p-2.5 font-medium ${homeStyle}">${m.favorite_side === 'HOME' ? '* ' : ''}${m.home_team}</td>
-                            <td class="p-2.5 text-center text-emerald-400 font-semibold">${hdpText}</td>
-                            <td class="p-2.5 text-center">${awayBtn}</td>
-                            <td class="p-2.5 font-medium ${awayStyle}">${m.favorite_side === 'AWAY' ? '* ' : ''}${m.away_team}</td>
-                            <td class="p-2.5 text-center">${overBtn}</td>
-                            <td class="p-2.5 text-center text-slate-300">${m.over_goal}</td>
-                            <td class="p-2.5 text-center">${underBtn}</td>
+                        <tr class="${rowOpacity} border-b border-slate-700/50 transition text-[11px]">
+                            <td class="p-2 border-r border-slate-700/50 text-slate-400 font-medium">${m.match_time}</td>
+                            <td class="p-2 border-r border-slate-700/50">${homeBtn}</td>
+                            <td class="p-2 border-r border-slate-700/50 text-left ${homeStyle}">${m.favorite_side === 'HOME' ? '*' : ''}${m.home_team}</td>
+                            <td class="p-2 border-r border-slate-700/50 text-cyan-300 font-semibold">${homeOdds}</td>
+                            <td class="p-2 border-r border-slate-700/50 text-amber-300 font-bold">${hdpText}</td>
+                            <td class="p-2 border-r border-slate-700/50 text-cyan-300 font-semibold">${awayOdds}</td>
+                            <td class="p-2 border-r border-slate-700/50">${awayBtn}</td>
+                            <td class="p-2 border-r border-slate-600 text-left ${awayStyle}">${m.favorite_side === 'AWAY' ? '*' : ''}${m.away_team}</td>
+                            <td class="p-2 border-r border-slate-700/50">${overBtn}</td>
+                            <td class="p-2 border-r border-slate-700/50 text-cyan-300 font-semibold">${overOdds}</td>
+                            <td class="p-2 border-r border-slate-700/50 text-emerald-300 font-bold">${ouText}</td>
+                            <td class="p-2 border-r border-slate-700/50 text-cyan-300 font-semibold">${underOdds}</td>
+                            <td class="p-2">${underBtn}</td>
                         </tr>
                     `;
                 });
@@ -481,59 +507,81 @@
                     nameInput.value = savedName;
                 }
                 loadUserBillsHistory();
-            } catch (err) { tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-400">โหลดข้อมูลไม่สำเร็จ</td></tr>`; }
+            } catch (err) { tbody.innerHTML = `<tr><td colspan="13" class="p-6 text-center text-red-400">โหลดข้อมูลไม่สำเร็จ</td></tr>`; }
         }
 
-        // ฟังก์ชันสร้างและเปิดหน้าต่างภาพตารางยาวต่อเนื่องสำหรับส่งให้ลูกค้าทางไลน์
+        // ออกภาพตารางให้ลูกค้าสไตล์โพยโต๊ะบอลมาตรฐาน (พื้นสว่าง ขอบตารางครบตามภาพตัวอย่าง)
         async function openExportTableModal() {
             const container = document.getElementById('export-table-content');
-            container.innerHTML = `<div class="text-center py-6 text-slate-400">กำลังจัดเรียงตารางแข่งขัน...</div>`;
+            container.innerHTML = `<div class="text-center py-6 text-slate-600">กำลังจัดเรียงตารางโพยมาตรฐาน...</div>`;
             document.getElementById('export-table-modal').classList.remove('hidden');
 
-            const { data, error } = await supabaseClient.from('matches').select('*').order('match_id');
+            const { data, error } = await supabaseClient.from('matches').select('*').order('match_id', { ascending: true });
             if (error || !data || data.length === 0) {
-                container.innerHTML = `<div class="text-center py-6 text-red-400">ไม่พบข้อมูลโปรแกรมแข่งขันในระบบ</div>`;
+                container.innerHTML = `<div class="text-center py-6 text-red-600">ไม่พบข้อมูลโปรแกรมแข่งขันในระบบ</div>`;
                 return;
             }
 
             let html = `
-                <table class="w-full text-left text-xs border-collapse">
+                <table class="w-full text-center text-[11px] border-collapse border border-slate-500 font-medium">
                     <thead>
-                        <tr class="bg-slate-950 text-amber-400 uppercase text-[11px] border-b border-slate-700">
-                            <th class="p-2 text-center">เวลา</th>
-                            <th class="p-2 text-center">รหัสเหย้า</th>
-                            <th class="p-2">ทีมเหย้า</th>
-                            <th class="p-2 text-center">แฮนดิแคป</th>
-                            <th class="p-2 text-center">รหัสเยือน</th>
-                            <th class="p-2">ทีมเยือน</th>
-                            <th class="p-2 text-center">รหัสสูง</th>
-                            <th class="p-2 text-center">สูง/ต่ำ</th>
-                            <th class="p-2 text-center">รหัสต่ำ</th>
+                        <tr class="bg-slate-200 text-slate-900 border-b border-slate-500 font-bold">
+                            <th class="p-1.5 border border-slate-500 w-12">เวลา</th>
+                            <th class="p-1.5 border border-slate-500 w-10">รหัส</th>
+                            <th class="p-1.5 border border-slate-500">ทีมเหย้า</th>
+                            <th class="p-1.5 border border-slate-500 w-11">น้ำ</th>
+                            <th class="p-1.5 border border-slate-500 w-14">ราคา</th>
+                            <th class="p-1.5 border border-slate-500 w-11">น้ำ</th>
+                            <th class="p-1.5 border border-slate-500 w-10">รหัส</th>
+                            <th class="p-1.5 border border-slate-500">ทีมเยือน</th>
+                            <th class="p-1.5 border border-slate-500 w-10">สูง</th>
+                            <th class="p-1.5 border border-slate-500 w-11">น้ำ</th>
+                            <th class="p-1.5 border border-slate-500 w-14">สกอร์</th>
+                            <th class="p-1.5 border border-slate-500 w-11">น้ำ</th>
+                            <th class="p-1.5 border border-slate-500 w-10">ต่ำ</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-800">
+                    <tbody>
             `;
 
             let currentLeague = '';
-            data.forEach(m => {
+            data.forEach((m, idx) => {
                 if (m.league !== currentLeague) {
                     currentLeague = m.league;
-                    html += `<tr class="bg-amber-950/60 border-y border-amber-600/40"><td colspan="9" class="p-2 text-center font-bold text-amber-300 uppercase">🏆 ${currentLeague}</td></tr>`;
+                    html += `
+                        <tr class="bg-neutral-500 text-white font-bold">
+                            <td colspan="13" class="py-1 px-2 text-center border border-slate-500 tracking-wide">${currentLeague}</td>
+                        </tr>
+                    `;
                 }
-                let homeStyle = m.favorite_side === 'HOME' ? 'text-red-400 font-bold' : 'text-slate-200';
-                let awayStyle = m.favorite_side === 'AWAY' ? 'text-red-400 font-bold' : 'text-slate-200';
+
+                let rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-slate-100';
+                let homeStyle = m.favorite_side === 'HOME' ? 'text-red-600 font-bold underline' : 'text-blue-900 font-semibold';
+                let awayStyle = m.favorite_side === 'AWAY' ? 'text-red-600 font-bold underline' : 'text-blue-900 font-semibold';
+                
+                let hdpText = formatHdpDisplay(m.hdp_value);
+                let ouText = formatHdpDisplay(m.over_goal);
+
+                let homeOdds = Number(m.home_odds || 1.90).toFixed(2);
+                let awayOdds = Number(m.away_odds || 1.90).toFixed(2);
+                let overOdds = Number(m.over_odds || 1.90).toFixed(2);
+                let underOdds = Number(m.under_odds || 1.90).toFixed(2);
 
                 html += `
-                    <tr class="hover:bg-slate-800/50">
-                        <td class="p-2 text-center text-slate-400">${m.match_time}</td>
-                        <td class="p-2 text-center font-bold text-amber-300">[${m.home_code}]</td>
-                        <td class="p-2 font-medium ${homeStyle}">${m.favorite_side === 'HOME' ? '* ' : ''}${m.home_team}</td>
-                        <td class="p-2 text-center text-emerald-400 font-semibold">${m.hdp_value}</td>
-                        <td class="p-2 text-center font-bold text-amber-300">[${m.away_code}]</td>
-                        <td class="p-2 font-medium ${awayStyle}">${m.favorite_side === 'AWAY' ? '* ' : ''}${m.away_team}</td>
-                        <td class="p-2 text-center font-bold text-cyan-300">[${m.over_code}]</td>
-                        <td class="p-2 text-center text-slate-300">${m.over_goal}</td>
-                        <td class="p-2 text-center font-bold text-cyan-300">[${m.under_code}]</td>
+                    <tr class="${rowBg} text-slate-900">
+                        <td class="py-1 px-1 border border-slate-400 font-semibold">${m.match_time}</td>
+                        <td class="py-1 px-1 border border-slate-400 bg-rose-100 text-red-700 font-bold">${m.home_code}</td>
+                        <td class="py-1 px-2 border border-slate-400 ${homeStyle}">${m.favorite_side === 'HOME' ? '*' : ''}${m.home_team}</td>
+                        <td class="py-1 px-1 border border-slate-400">${homeOdds}</td>
+                        <td class="py-1 px-1 border border-slate-400 font-bold">${hdpText}</td>
+                        <td class="py-1 px-1 border border-slate-400">${awayOdds}</td>
+                        <td class="py-1 px-1 border border-slate-400 bg-rose-100 text-red-700 font-bold">${m.away_code}</td>
+                        <td class="py-1 px-2 border border-slate-400 ${awayStyle}">${m.favorite_side === 'AWAY' ? '*' : ''}${m.away_team}</td>
+                        <td class="py-1 px-1 border border-slate-400 bg-rose-100 text-red-700 font-bold">${m.over_code}</td>
+                        <td class="py-1 px-1 border border-slate-400">${overOdds}</td>
+                        <td class="py-1 px-1 border border-slate-400 font-bold">${ouText}</td>
+                        <td class="py-1 px-1 border border-slate-400">${underOdds}</td>
+                        <td class="py-1 px-1 border border-slate-400 bg-rose-100 text-red-700 font-bold">${m.under_code}</td>
                     </tr>
                 `;
             });
@@ -548,7 +596,7 @@
 
         function downloadTableImage() {
             const tableElement = document.getElementById('printable-table-container');
-            html2canvas(tableElement, { scale: 2, backgroundColor: '#0f172a' }).then(canvas => {
+            html2canvas(tableElement, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `Match_Schedule_${new Date().toISOString().split('T')[0]}.png`;
                 link.href = canvas.toDataURL('image/png');
@@ -567,16 +615,16 @@
 
             let description = '', odds = 1.90;
             if (type === 'HOME') {
-                description = `${match.home_team} ${match.favorite_side === 'HOME' ? '[ต่อ]' : '[รอง]'} (${match.hdp_value})`;
+                description = `${match.home_team} ${match.favorite_side === 'HOME' ? '[ต่อ]' : '[รอง]'} (${formatHdpDisplay(match.hdp_value)})`;
                 odds = match.home_odds;
             } else if (type === 'AWAY') {
-                description = `${match.away_team} ${match.favorite_side === 'AWAY' ? '[ต่อ]' : '[รอง]'} (${match.hdp_value})`;
+                description = `${match.away_team} ${match.favorite_side === 'AWAY' ? '[ต่อ]' : '[รอง]'} (${formatHdpDisplay(match.hdp_value)})`;
                 odds = match.away_odds;
             } else if (type === 'OVER') {
-                description = `${match.home_team} vs ${match.away_team} [สูง ${match.over_goal}]`;
+                description = `${match.home_team} vs ${match.away_team} [สูง ${formatHdpDisplay(match.over_goal)}]`;
                 odds = match.over_odds;
             } else if (type === 'UNDER') {
-                description = `${match.home_team} vs ${match.away_team} [ต่ำ ${match.over_goal}]`;
+                description = `${match.home_team} vs ${match.away_team} [ต่ำ ${formatHdpDisplay(match.over_goal)}]`;
                 odds = match.under_odds;
             }
 
@@ -600,7 +648,7 @@
             let html = '', totalOdds = 1;
             selectedBets.forEach(b => {
                 totalOdds *= b.odds;
-                html += `<div class="bg-slate-900 p-2 rounded border border-slate-700 flex justify-between items-center"><div><span class="text-amber-400 font-bold">[รหัส: ${b.code}]</span><div class="text-white">${b.description}</div></div><button onclick="removeBet('${b.matchId}')" class="text-red-400 font-bold">✕</button></div>`;
+                html += `<div class="bg-slate-900 p-2 rounded border border-slate-700 flex justify-between items-center"><div><span class="text-amber-400 font-bold">[รหัส: ${b.code}]</span> <span class="text-cyan-300 text-[11px]">(น้ำ ${Number(b.odds).toFixed(2)})</span><div class="text-white">${b.description}</div></div><button onclick="removeBet('${b.matchId}')" class="text-red-400 font-bold">✕</button></div>`;
             });
             listEl.innerHTML = html;
             document.getElementById('total-odds').innerText = totalOdds.toFixed(2);
@@ -761,7 +809,6 @@
             tbody.innerHTML = html;
         }
 
-        // ฟังก์ชันลบบิลออกจากฐานข้อมูล Supabase
         async function deleteBill(billId) {
             if (!confirm(`คุณต้องการลบบิลรหัส ${billId} ออกจากระบบใช่หรือไม่?`)) return;
 
@@ -772,12 +819,12 @@
             }
 
             alert(`✅ ลบบิลรหัส ${billId} สำเร็จเรียบร้อย`);
-            loadAdminDashboard(); // รีเฟรชข้อมูลหน้าแอดมินใหม่ทันที
+            loadAdminDashboard();
         }
 
         async function loadAdminMatches() {
             const tbody = document.getElementById('admin-matches-tbody');
-            const { data, error } = await supabaseClient.from('matches').select('*').order('match_id');
+            const { data, error } = await supabaseClient.from('matches').select('*').order('match_id', { ascending: true });
             if (error || !data) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-red-400">โหลดข้อมูลไม่สำเร็จ</td></tr>`; return; }
             
             matchesMapGlobal = {};
@@ -786,28 +833,22 @@
                 matchesMapGlobal[String(m.match_id)] = m;
             });
 
-            let sortedMatches = data.sort((a, b) => {
-                let aStarted = isMatchStarted(a.match_time) ? 1 : 0;
-                let bStarted = isMatchStarted(b.match_time) ? 1 : 0;
-                return bStarted - aStarted;
-            });
-
             let html = '';
-            sortedMatches.forEach(m => {
+            data.forEach(m => {
                 let hHome = m.home_score !== null ? m.home_score : '';
                 let hAway = m.away_score !== null ? m.away_score : '';
                 let isStarted = isMatchStarted(m.match_time);
-                let badge = isStarted ? `<span class="text-red-400 text-[10px] font-bold block">🔴 กำลังเตะ/จบแล้ว</span>` : `<span class="text-slate-400 text-[10px] block">⏳ ยังไม่เตะ</span>`;
+                let badge = isStarted ? `<span class="text-red-400 text-[10px] font-bold">🔴 เตะแล้ว</span>` : `<span class="text-slate-400 text-[10px]">⏳ รอเตะ</span>`;
 
                 html += `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-700/20">
                         <td class="p-2 text-slate-300">
-                            <b class="text-amber-300">${m.league}</b><br>
+                            <span class="text-slate-500">#${m.match_id}</span> <b class="text-amber-300">${m.league}</b><br>
                             <span>${m.match_time}</span> ${badge}
                         </td>
-                        <td class="p-2 font-medium text-white">${m.home_team}</td>
-                        <td class="p-2 text-center text-emerald-400 font-bold">${m.hdp_value}</td>
-                        <td class="p-2 font-medium text-white">${m.away_team}</td>
+                        <td class="p-2 font-medium text-white">[${m.home_code}] ${m.home_team}</td>
+                        <td class="p-2 text-center text-emerald-400 font-bold">${formatHdpDisplay(m.hdp_value)}</td>
+                        <td class="p-2 font-medium text-white">[${m.away_code}] ${m.away_team}</td>
                         <td class="p-2 text-center"><input type="number" id="score-home-${m.match_id}" value="${hHome}" class="w-14 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white font-bold"></td>
                         <td class="p-2 text-center"><input type="number" id="score-away-${m.match_id}" value="${hAway}" class="w-14 bg-slate-900 text-center border border-slate-700 rounded p-1 text-white font-bold"></td>
                         <td class="p-2 text-center">
@@ -830,7 +871,7 @@
 
             const { error } = await supabaseClient.from('matches').update({ home_score: homeScore, away_score: awayScore }).eq('match_id', matchId);
             if (error) { alert('บันทึกไม่สำเร็จ: ' + error.message); return; }
-            alert(`✅ อัปเดตสกอร์คู่ ID: ${matchId} สำเร็จ!`);
+            alert(`✅ อัปเดตสกอร์คู่ #${matchId} สำเร็จ!`);
             loadAdminMatches();
         }
 
@@ -1043,7 +1084,7 @@
                                 <span class="text-amber-400 font-bold">[รหัส: ${bet.code}]</span> 
                                 <span class="text-white font-medium">${bet.description}</span>
                             </div>
-                            <span class="text-slate-300 whitespace-nowrap ml-2">ค่าน้ำ: ${bet.odds}</span>
+                            <span class="text-slate-300 whitespace-nowrap ml-2">ค่าน้ำ: ${Number(bet.odds).toFixed(2)}</span>
                         </div>
                         <div class="flex justify-between items-center text-[10px] text-slate-400 bg-slate-950/40 p-1 rounded">
                             <span>คู่แข่งขัน: ${matchInfo ? matchInfo.home_team + ' vs ' + matchInfo.away_team : ' - '}</span>
