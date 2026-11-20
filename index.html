@@ -79,10 +79,7 @@
             <section class="lg:col-span-4 space-y-4">
                 <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-4 sticky top-20 space-y-4">
                     <h2 class="font-bold text-amber-400 border-b border-slate-700 pb-2 flex justify-between items-center">
-                        <span>🛒 บิลโพยของคุณ
-                        
-                        
-                     </span>
+                        <span>🛒 บิลโพยของคุณ (สเต็ป)</span>
                         <span id="selected-count" class="bg-amber-500 text-slate-950 text-xs px-2 py-0.5 rounded-full font-bold">0 คู่</span>
                     </h2>
                     <div id="selected-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-xs">
@@ -169,15 +166,35 @@
                 </div>
             </div>
 
-            <!-- ส่วนจัดการผลการแข่งขัน (กรอกและแก้ไขสกอร์อัจฉริยะ) -->
+            <!-- ส่วนจัดการผลการแข่งขัน (3 โหมดฉลาดแยกชัดเจน) -->
             <div class="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-4 space-y-4">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-700 pb-3 gap-2">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-700 pb-3 gap-3">
                     <div>
-                        <h3 class="font-bold text-amber-300 text-sm">⚡ บันทึกและแก้ไขสกอร์การแข่งขัน (เรียงตามตารางต้นฉบับ)</h3>
-                        <p class="text-[11px] text-slate-400">พิมพ์หรือแก้สกอร์แล้วกดอัปเดตเพื่อบันทึกทับได้ทันที</p>
+                        <h3 class="font-bold text-amber-300 text-sm">⚽ จัดการผลสกอร์การแข่งขัน</h3>
+                        <p class="text-[11px] text-slate-400">เลือกโหมดการทำงานให้เหมาะกับจังหวะการคีย์สกอร์ได้เลยครับ</p>
                     </div>
-                    <button onclick="loadAdminMatches()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-xs">🔄 รีเฟรชตารางสกอร์</button>
+
+                    <!-- 3 ปุ่มเมนูจัดการสกอร์ -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button id="btn-mode-live" onclick="setScoreMode('live')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-emerald-600 text-white shadow">
+                            ⚡ อัปเดตสกอร์ (คู่ที่เตะอยู่)
+                        </button>
+                        <button id="btn-mode-edit" onclick="setScoreMode('edit')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-slate-700 hover:bg-slate-600 text-slate-200">
+                            ✏️ แก้ไขสกอร์ (ย้อนหลัง/จบแล้ว)
+                        </button>
+                        <button id="btn-mode-all" onclick="setScoreMode('all')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-slate-700 hover:bg-slate-600 text-slate-200">
+                            📋 ดูทุกคู่
+                        </button>
+                        <button onclick="loadAdminMatches()" class="bg-slate-900 hover:bg-slate-700 border border-slate-600 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs">
+                            🔄
+                        </button>
+                    </div>
                 </div>
+
+                <div id="score-mode-hint" class="text-[11px] text-emerald-300 bg-emerald-950/30 border border-emerald-700/40 px-3 py-2 rounded-lg">
+                    แสดงเฉพาะคู่ที่เริ่มเตะแล้วและอยู่ในช่วงเวลาแข่งขัน (~105 นาที รวมทดเวลาเจ็บ)
+                </div>
+
                 <div class="overflow-x-auto max-h-72 overflow-y-auto">
                     <table class="w-full text-left text-xs border-collapse border border-slate-700">
                         <thead>
@@ -260,7 +277,7 @@
     <div id="income-report-modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex justify-center items-center p-4">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                <h3 class="text-base font-bold text-amber-400">📈 รายงานรายได้โต๊ะ(Income & Profit Report)</h3>
+                <h3 class="text-base font-bold text-amber-400">📈 รายงานรายได้โต๊ะบอล (Income & Profit Report)</h3>
                 <button onclick="closeIncomeModal()" class="text-slate-400 hover:text-white font-bold text-lg">✕</button>
             </div>
             <div class="flex flex-wrap gap-3 items-center bg-slate-900 p-3 rounded border border-slate-700 text-xs">
@@ -316,9 +333,7 @@
             
             <div id="printable-slip" class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3 text-xs text-slate-200">
                 <div class="text-center border-b border-slate-800 pb-2">
-                    <h4 class="font-bold text-amber-400 text-sm">⚽ โต๊ะ
-                        
-                    </h4>
+                    <h4 class="font-bold text-amber-400 text-sm">⚽ โต๊ะเยาวราช (สเต็ปออนไลน์)</h4>
                     <p class="text-[10px] text-slate-400" id="slip-time">-</p>
                 </div>
                 <div class="flex justify-between font-semibold">
@@ -367,6 +382,7 @@
         let allBillsCache = [];
         let isAdminLoggedIn = false;
         let currentFilter = 'all';
+        let currentScoreMode = 'live'; // 'live' | 'edit' | 'all'
 
         function formatHdpDisplay(val) {
             const num = parseFloat(val);
@@ -423,24 +439,67 @@
             alert('ออกจากระบบแอดมินเรียบร้อย');
         }
 
-        function isMatchStarted(matchTimeStr) {
-            if (!matchTimeStr) return false;
-            const now = new Date();
-            const currentHour = now.getHours();
-            const currentMinute = now.getMinutes();
-            const currentTimeVal = currentHour * 60 + currentMinute;
-
+        // แปลงเวลาแข่ง "HH:MM" เป็นนาทีนับจากเที่ยงคืน (รองรับคู่ข้ามคืนหลังเที่ยงคืน)
+        function getMatchMinutesFromMidnight(matchTimeStr) {
+            if (!matchTimeStr) return null;
             const parts = matchTimeStr.split(':');
-            if (parts.length < 2) return false;
-            const matchHour = parseInt(parts[0]);
-            const matchMinute = parseInt(parts[1]);
-            const matchTimeVal = matchHour * 60 + matchMinute;
+            if (parts.length < 2) return null;
+            const h = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            if (isNaN(h) || isNaN(m)) return null;
+            return h * 60 + m;
+        }
 
-            if (matchTimeVal >= 0 && matchTimeVal <= 600) {
-                return false; 
+        // คำนวณสถานะเวลาของคู่บอลแบบยืดหยุ่น (เตะอยู่ ~105 นาทีเผื่อทดเวลา/พักครึ่ง)
+        function getMatchTimeStatus(matchTimeStr) {
+            const matchMin = getMatchMinutesFromMidnight(matchTimeStr);
+            if (matchMin === null) return 'unknown';
+
+            const now = new Date();
+            const nowMin = now.getHours() * 60 + now.getMinutes();
+
+            // ปรับระยะห่างแบบรองรับรอยต่อเที่ยงคืน (1440 นาที)
+            let diff = nowMin - matchMin;
+            if (diff < -720) diff += 1440;
+            if (diff > 720) diff -= 1440;
+
+            if (diff < 0) return 'upcoming';     // ยังไม่ถึงเวลาเตะ
+            if (diff <= 105) return 'live';      // กำลังเตะอยู่ (เริ่มเตะแล้ว และยังไม่เกิน ~105 นาที)
+            return 'finished';                   // เกินกรอบเวลาแข่งแล้ว / น่าจะจบแล้ว
+        }
+
+        function isMatchStarted(matchTimeStr) {
+            const status = getMatchTimeStatus(matchTimeStr);
+            return status === 'live' || status === 'finished';
+        }
+
+        function setScoreMode(mode) {
+            currentScoreMode = mode;
+
+            const btnLive = document.getElementById('btn-mode-live');
+            const btnEdit = document.getElementById('btn-mode-edit');
+            const btnAll = document.getElementById('btn-mode-all');
+            const hint = document.getElementById('score-mode-hint');
+
+            const activeClass = 'px-3 py-1.5 rounded-lg text-xs font-bold transition shadow';
+            const inactiveClass = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-slate-700 hover:bg-slate-600 text-slate-200';
+
+            btnLive.className = mode === 'live' ? `${activeClass} bg-emerald-600 text-white` : inactiveClass;
+            btnEdit.className = mode === 'edit' ? `${activeClass} bg-amber-500 text-slate-950` : inactiveClass;
+            btnAll.className = mode === 'all' ? `${activeClass} bg-cyan-600 text-white` : inactiveClass;
+
+            if (mode === 'live') {
+                hint.className = 'text-[11px] text-emerald-300 bg-emerald-950/30 border border-emerald-700/40 px-3 py-2 rounded-lg';
+                hint.innerText = '⚡ โหมดอัปเดตสกอร์ (คู่ที่เตะอยู่): แสดงเฉพาะคู่ที่เริ่มเตะแล้วและอยู่ภายใน ~105 นาที (เผื่อทดเวลาเจ็บแล้ว)';
+            } else if (mode === 'edit') {
+                hint.className = 'text-[11px] text-amber-300 bg-amber-950/30 border border-amber-700/40 px-3 py-2 rounded-lg';
+                hint.innerText = '✏️ โหมดแก้ไขสกอร์: แสดงคู่ที่กรอกสกอร์ไว้แล้ว หรือพ้นกรอบเวลาแข่งขันแล้ว เผื่อต้องการแก้ผลย้อนหลัง';
+            } else {
+                hint.className = 'text-[11px] text-cyan-300 bg-cyan-950/30 border border-cyan-700/40 px-3 py-2 rounded-lg';
+                hint.innerText = '📋 โหมดดูทุกคู่: แสดงโปรแกรมทั้งหมดเรียงตามลำดับต้นฉบับ (ทั้งคู่ที่เตะอยู่ จบแล้ว และยังไม่เตะ)';
             }
 
-            return currentTimeVal >= matchTimeVal;
+            loadAdminMatches();
         }
 
         async function loadMatches() {
@@ -833,12 +892,37 @@
                 matchesMapGlobal[String(m.match_id)] = m;
             });
 
+            // กรองรายการตามโหมดที่เลือก (live / edit / all)
+            const filteredMatches = data.filter(m => {
+                const timeStatus = getMatchTimeStatus(m.match_time);
+                const hasScore = (m.home_score !== null && m.home_score !== '') || (m.away_score !== null && m.away_score !== '');
+
+                if (currentScoreMode === 'live') {
+                    return timeStatus === 'live';
+                }
+                if (currentScoreMode === 'edit') {
+                    return hasScore || timeStatus === 'finished';
+                }
+                return true; // 'all'
+            });
+
+            if (filteredMatches.length === 0) {
+                let emptyMsg = 'ไม่พบคู่แข่งขันในโหมดนี้';
+                if (currentScoreMode === 'live') emptyMsg = 'ยังไม่มีคู่ที่กำลังเตะอยู่ในช่วงเวลานี้ (หรือกดดูโหมด "แก้ไขสกอร์" / "ดูทุกคู่")';
+                if (currentScoreMode === 'edit') emptyMsg = 'ยังไม่มีคู่ที่มีสกอร์หรือพ้นกรอบเวลาแข่งขันให้แก้ไข';
+                tbody.innerHTML = `<tr><td colspan="7" class="p-5 text-center text-slate-400">${emptyMsg}</td></tr>`;
+                return;
+            }
+
             let html = '';
-            data.forEach(m => {
+            filteredMatches.forEach(m => {
                 let hHome = m.home_score !== null ? m.home_score : '';
                 let hAway = m.away_score !== null ? m.away_score : '';
-                let isStarted = isMatchStarted(m.match_time);
-                let badge = isStarted ? `<span class="text-red-400 text-[10px] font-bold">🔴 เตะแล้ว</span>` : `<span class="text-slate-400 text-[10px]">⏳ รอเตะ</span>`;
+                let timeStatus = getMatchTimeStatus(m.match_time);
+
+                let badge = `<span class="text-slate-400 text-[10px]">⏳ ยังไม่เตะ</span>`;
+                if (timeStatus === 'live') badge = `<span class="text-emerald-400 text-[10px] font-bold">🟢 กำลังเตะ (~90+ นาที)</span>`;
+                else if (timeStatus === 'finished') badge = `<span class="text-amber-300 text-[10px] font-bold">🏁 จบ/พ้นเวลาเตะ</span>`;
 
                 html += `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-700/20">
