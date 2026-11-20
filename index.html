@@ -426,7 +426,10 @@
         async function loadMatches() {
             const tbody = document.getElementById('matches-table-body');
             try {
-                const { data, error } = await supabaseClient.from('matches').select('*').order('league').order('match_time');
+                const { data, error } = await supabaseClient
+    .from('matches')
+    .select('*')
+    .order('match_id', { ascending: true });
                 if (error) throw error;
                 matchesData = data || [];
                 matchesMapGlobal = {};
